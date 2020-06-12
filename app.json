@@ -1,0 +1,17 @@
+{
+  "name": "scales",
+  "displayName": "scales",
+  "expo": {
+    "name": "scales",
+    "slug": "scales",
+    "version": "1.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
