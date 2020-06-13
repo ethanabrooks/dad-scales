@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, Picker, StyleSheet, Text, View } from "react-native";
-import { List } from "immutable";
+import { List, Range } from "immutable";
 import patterns from "./patterns.json";
 import { ajv, schema } from "./schema";
 import Vex from "vexflow";
@@ -121,50 +121,59 @@ export default function App() {
         </View>
       );
     case "display":
-      const scale = state.notes
-        .map((note: Note) => {
-          let staveNote = new Vex.Flow.StaveNote({
-            clef: "treble",
-            keys: [`${note}/4`],
-            duration: `8`
-          });
-          let accidental = note[1];
-          return "#b".includes(accidental)
-            ? staveNote.addAccidental(0, new Vex.Flow.Accidental(accidental))
-            : staveNote;
-        })
-        .concat(
-          Array(8 - state.notes.length).fill(
-            new Vex.Flow.StaveNote({
+      const length = state.notes.length;
+      const numNotes = Range(0, Infinity)
+        .map(n => Math.pow(2, n))
+        .filter(n => n > length)
+        .first(null);
+      if (!numNotes) {
+        setState({ type: "error", message: "Mis-computed numNotes." });
+      } else {
+        const scale = state.notes
+          .map((note: Note) => {
+            let staveNote = new Vex.Flow.StaveNote({
               clef: "treble",
-              keys: ["bb/4"],
-              duration: "8"
-            })
-          )
-        );
-      const context = new ReactNativeSVGContext(NotoFontPack, styles.svg);
-      const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 200);
-      stave.setContext(context);
-      // @ts-ignore
-      stave.setClef("treble");
-      // @ts-ignore
-      stave.setTimeSignature(`4/4`);
-      stave.draw();
+              keys: [`${note}/4`],
+              duration: `${numNotes}`
+            });
+            let accidental = note[1];
+            return "#b".includes(accidental)
+              ? staveNote.addAccidental(0, new Vex.Flow.Accidental(accidental))
+              : staveNote;
+          })
+          .concat(
+            Array(numNotes - state.notes.length).fill(
+              new Vex.Flow.StaveNote({
+                clef: "treble",
+                keys: ["bb/4"],
+                duration: `${numNotes}r`
+              })
+            )
+          );
+        const context = new ReactNativeSVGContext(NotoFontPack, styles.svg);
+        const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 200);
+        stave.setContext(context);
+        // @ts-ignore
+        stave.setClef("treble");
+        // @ts-ignore
+        stave.setTimeSignature(`4/4`);
+        stave.draw();
 
-      const voice = new Vex.Flow.Voice({
-        num_beats: 4,
-        beat_value: 4
-      });
-      voice.addTickables(scale);
+        const voice = new Vex.Flow.Voice({
+          num_beats: 4,
+          beat_value: 4
+        });
+        voice.addTickables(scale);
 
-      // Format and justify the notes to 400 pixels.
-      new Vex.Flow.Formatter().joinVoices([voice]).format([voice], 100);
+        // Format and justify the notes to 400 pixels.
+        new Vex.Flow.Formatter().joinVoices([voice]).format([voice], 100);
 
-      // Render voice
-      voice.draw(context, stave);
-      // voice.addTickables(_notes);
+        // Render voice
+        voice.draw(context, stave);
+        // voice.addTickables(_notes);
 
-      return <View>{context.render()}</View>;
+        return <View>{context.render()}</View>;
+      }
   }
 }
 
