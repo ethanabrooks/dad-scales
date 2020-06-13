@@ -4,6 +4,7 @@ import RNPickerSelect from "react-native-picker-select";
 import patterns from "./patterns.json";
 import { Music } from "./music";
 import Vex from "vexflow";
+
 type Note = string;
 type Pattern = { name: string; pattern: number[]; roots: Note[] };
 
@@ -39,14 +40,19 @@ export default function App() {
   const sheetmusic = () => {
     if (scale && root) {
       const music = new Vex.Flow.Music();
-      const scaleTones: number[] = music.getScaleTones(
-        // @ts-ignore
-        music.getNoteValue(root),
-        [0].concat(scale.pattern)
-      );
-      console.log([0].concat(scale.pattern));
-      console.log(music.getNoteValue(root));
-      const notes = scaleTones.map(t => music.getCanonicalNoteName(t));
+      let keyValue: number = music.getNoteValue(root);
+      const notes: string[] = scale.pattern
+        .reduce(
+          ({ notes, prev }, cur: number) => {
+            const note = (prev + cur) % Vex.Flow.Music.NUM_TONES;
+            return { notes: notes.concat(note), prev: note };
+          },
+          { notes: [keyValue], prev: keyValue }
+        )
+        .notes.map(v => {
+          console.log(v);
+          return music.getCanonicalNoteName(v);
+        });
       return new Music(notes, styles.svg).render();
     }
   };
