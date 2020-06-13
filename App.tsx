@@ -91,83 +91,73 @@ export default function App() {
       });
     }
   }, []);
-  if (!pattern) {
-    setState({ type: "error", message: "Somehow pattern is null..." });
-  } else {
-    switch (state.type) {
-      case "selectPattern":
-        return (
-          <View style={styles.container}>
-            <Picker
-              selectedValue={pattern}
-              style={styles.picker}
-              onValueChange={(value, itemIndex) => setPattern(value)}
-            >
-              {state.patterns
-                .toSeq()
-                .map((p, n) => <Picker.Item label={n} value={p} key={n} />)
-                .valueSeq()
-                .toArray()}
-            </Picker>
+
+  switch (state.type) {
+    case "loading":
+      return <Text>Loading…</Text>;
+    case "error":
+      return <Text>{state.message}</Text>;
+    case "selectPattern":
+      return (
+        <View style={styles.container}>
+          <Picker
+            selectedValue={pattern}
+            style={styles.picker}
+            onValueChange={(value, itemIndex) => setPattern(value)}
+          >
+            {state.patterns
+              .toSeq()
+              .map((p, n) => <Picker.Item label={n} value={p} key={n} />)
+              .valueSeq()
+              .toArray()}
+          </Picker>
+          <Button
+            title="Select Scale"
+            onPress={() => setState({ type: "selectRoot", pattern: pattern })}
+          />
+        </View>
+      );
+    case "selectRoot":
+      return (
+        <View style={styles.container}>
+          <Picker
+            selectedValue={root}
+            style={styles.picker}
+            onValueChange={(value, itemIndex) => setRoot(value)}
+          >
+            {state.pattern.roots.map(note => {
+              const noteName = `${note[0]}${note[1]}`;
+              return (
+                <Picker.Item label={noteName} value={note} key={noteName} />
+              );
+            })}
+          </Picker>
+          {
             <Button
               title="Select Scale"
-              onPress={() => setState({ type: "selectRoot", pattern: pattern })}
+              onPress={() =>
+                setState({
+                  type: "display",
+                  pattern: state.pattern,
+                  root: 0
+                })
+              }
             />
-          </View>
-        );
-      case "selectRoot":
-        return (
-          <View style={styles.container}>
-            <Picker
-              selectedValue={root}
-              style={styles.picker}
-              onValueChange={(value, itemIndex) => setRoot(value)}
-            >
-              {state.pattern.roots.map(note => {
-                const noteName = () => {
-                  switch (note[1]) {
-                    case "sharp":
-                      return `${note[0]}♯`;
-                    case "flat":
-                      return `${note[0]}♭`;
-                    default:
-                      return note[0];
-                  }
-                };
-                return (
-                  <Picker.Item
-                    label={noteName()}
-                    value={note}
-                    key={noteName()}
-                  />
-                );
-              })}
-            </Picker>
-            {
-              <Button
-                title="Select Scale"
-                onPress={() =>
-                  setState({
-                    type: "display",
-                    pattern: state.pattern,
-                    root: 0
-                  })
-                }
-              />
-            }
-          </View>
-        );
-      case "display":
-        break;
-    }
+          }
+        </View>
+      );
+    case "display":
+      return <Text>wut</Text>;
+    default:
+      return <Text>{state.type}</Text>;
   }
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "space-around"
+    // flex: 1,
+    // alignItems: "center",
+    // justifyContent: "space-around"
   },
   picker: {
     height: 150,
