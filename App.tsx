@@ -1,7 +1,8 @@
 import React from "react";
 import { Button, Picker, StyleSheet, Text, View } from "react-native";
-import { List, Map } from "immutable";
+import { List } from "immutable";
 import patterns from "./patterns.json";
+import { schema } from "./schema";
 
 var Ajv = require("ajv");
 var ajv = new Ajv({ allErrors: true });
@@ -16,27 +17,6 @@ ajv.addKeyword("matches", {
   },
   errors: true
 });
-const schema = {
-  type: "array",
-  minItems: 1,
-  items: {
-    type: "object",
-    properties: {
-      name: { type: "string" },
-      pattern: {
-        type: "array",
-        minItems: 1,
-        items: { type: "number", exclusiveMinimum: 0 }
-      },
-      roots: {
-        type: "array",
-        minItems: 1,
-        items: { type: "string", exclusiveMinimum: 0, matches: "^[A-G][#b]?$" },
-        required: ["name", "pattern", "roots"]
-      }
-    }
-  }
-};
 
 type Note = [string, "sharp" | "flat" | null];
 type PatternData = { name: string; pattern: number[]; roots: Note[] };
@@ -108,9 +88,6 @@ export default function App() {
           <Text>🙀</Text>
           <Text style={{ textAlign: "center" }}>{state.message}</Text>
         </View>
-        // <View style={styles.container}>
-        //   <Text>{state.message}</Text>;
-        // </View>
       );
 
     case "selectPattern":
@@ -177,7 +154,11 @@ export default function App() {
         </View>
       );
     case "display":
-      return <Text>display</Text>;
+      return (
+        <View style={styles.error}>
+          <Text style={{ fontWeight: "bold" }}>display</Text>
+        </View>
+      );
   }
 }
 
