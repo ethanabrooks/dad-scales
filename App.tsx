@@ -126,9 +126,18 @@ export default function App() {
             onValueChange={(value, itemIndex) => setRoot(value)}
           >
             {state.pattern.roots.map(note => {
-              const noteName = `${note[0]}${note[1]}`;
+              const noteName = () => {
+                switch (note[1]) {
+                  case "sharp":
+                    return `${note[0]}♯`;
+                  case "flat":
+                    return `${note[0]}♭`;
+                  default:
+                    return note[0];
+                }
+              };
               return (
-                <Picker.Item label={noteName} value={note} key={noteName} />
+                <Picker.Item label={noteName()} value={note} key={noteName()} />
               );
             })}
           </Picker>
@@ -147,17 +156,15 @@ export default function App() {
         </View>
       );
     case "display":
-      return <Text>wut</Text>;
-    default:
-      return <Text>{state.type}</Text>;
+      return <Text>display</Text>;
   }
 }
 
 const styles = StyleSheet.create({
   container: {
-    // flex: 1,
-    // alignItems: "center",
-    // justifyContent: "space-around"
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "space-around"
   },
   picker: {
     height: 150,
