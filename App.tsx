@@ -129,7 +129,8 @@ export default function App() {
       if (!numNotes) {
         setState({ type: "error", message: "Mis-computed numNotes." });
       } else {
-        const scale = state.notes
+        const context = new ReactNativeSVGContext(NotoFontPack, styles.svg);
+        const _notes = state.notes
           .map((note: Note) => {
             let staveNote = new Vex.Flow.StaveNote({
               clef: "treble",
@@ -150,27 +151,48 @@ export default function App() {
               })
             )
           );
-        const context = new ReactNativeSVGContext(NotoFontPack, styles.svg);
-        const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 200);
+
+        const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 400);
         stave.setContext(context);
         // @ts-ignore
         stave.setClef("treble");
         // @ts-ignore
         stave.setTimeSignature(`4/4`);
         stave.draw();
-
-        const voice = new Vex.Flow.Voice({
-          num_beats: 4,
-          beat_value: 4
+        var beams = Vex.Flow.Beam.generateBeams(_notes);
+        Vex.Flow.Formatter.FormatAndDraw(context, stave, _notes);
+        beams.forEach(function(b) {
+          b.setContext(context).draw();
         });
-        voice.addTickables(scale);
-
-        // Format and justify the notes to 400 pixels.
-        new Vex.Flow.Formatter().joinVoices([voice]).format([voice], 100);
-
-        // Render voice
-        voice.draw(context, stave);
+        // const step = numNotes / 4;
+        // const beams = Range(0, numNotes, step).map(
+        //   start => new Vex.Flow.Beam(scale.slice(start, start + step))
+        // );
+        // const context = new ReactNativeSVGContext(NotoFontPack, styles.svg);
+        // const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 200);
+        // Vex.Flow.Formatter.FormatAndDraw(context, stave, scale);
+        // stave.setContext(context);
+        // // @ts-ignore
+        // stave.setClef("treble");
+        // // @ts-ignore
+        // stave.setTimeSignature(`4/4`);
+        // stave.draw();
+        //
+        // const voice = new Vex.Flow.Voice({
+        //   num_beats: 4,
+        //   beat_value: 4
+        // });
+        // voice.addTickables(scale);
+        //
+        // // Format and justify the notes to 400 pixels.
+        // new Vex.Flow.Formatter().joinVoices([voice]).format([voice], 100);
+        //
+        // // Render voice
+        // voice.draw(context, stave);
         // voice.addTickables(_notes);
+        // beams.forEach(function(b) {
+        //   b.setContext(context).draw();
+        // });
 
         return <View>{context.render()}</View>;
       }
