@@ -1,14 +1,10 @@
 import React from "react";
 import { Button, Picker, StyleSheet, Text, View } from "react-native";
-import { List, Range } from "immutable";
+import { List } from "immutable";
 import patterns from "./patterns.json";
 import { ajv, schema } from "./schema";
 import Vex from "vexflow";
-import {
-  NotoFontPack,
-  ReactNativeSVGContext
-  // @ts-ignore
-} from "standalone-vexflow-context";
+import { musicContext } from "./music";
 
 type Note = string;
 type ScaleData = { name: string; pattern: number[]; roots: Note[] };
@@ -143,65 +139,20 @@ export default function App() {
         </View>
       );
     case "display":
-      const length = state.notes.length;
-      const numNotes = Range(0, Infinity)
-        .map(n => Math.pow(2, n))
-        .filter(n => n > length)
-        .first(null);
-      if (!numNotes) {
-        setState({ type: "error", message: "Mis-computed numNotes." });
-      } else {
-        const context = new ReactNativeSVGContext(NotoFontPack, styles.svg);
-        const scale = state.notes
-          .map((note: Note) => {
-            let staveNote = new Vex.Flow.StaveNote({
-              clef: "treble",
-              keys: [`${note}/4`],
-              duration: `${numNotes}`
-            });
-            let accidental = note[1];
-            return "#b".includes(accidental)
-              ? staveNote.addAccidental(0, new Vex.Flow.Accidental(accidental))
-              : staveNote;
-          })
-          .concat(
-            Array(numNotes - state.notes.length).fill(
-              new Vex.Flow.StaveNote({
-                clef: "treble",
-                keys: ["bb/4"],
-                duration: `${numNotes}r`
+      return (
+        <View>
+          {musicContext(state.notes, styles.svg).render()}
+          <Button
+            title="Back"
+            onPress={() =>
+              setState({
+                ...state,
+                type: "selectRoot"
               })
-            )
-          );
-
-        const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 300);
-        stave.setContext(context);
-        // @ts-ignore
-        stave.setClef("treble");
-        // @ts-ignore
-        stave.setTimeSignature(`4/4`);
-        stave.draw();
-        const beams = Vex.Flow.Beam.generateBeams(scale);
-        Vex.Flow.Formatter.FormatAndDraw(context, stave, scale);
-        beams.forEach(function(b) {
-          b.setContext(context).draw();
-        });
-
-        return (
-          <View>
-            {context.render()}
-            <Button
-              title="Back"
-              onPress={() =>
-                setState({
-                  ...state,
-                  type: "selectRoot"
-                })
-              }
-            />
-          </View>
-        );
-      }
+            }
+          />
+        </View>
+      );
   }
 }
 
