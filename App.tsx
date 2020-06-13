@@ -7,25 +7,25 @@ import Vex from "vexflow";
 import {
   NotoFontPack,
   ReactNativeSVGContext
+  // @ts-ignore
 } from "standalone-vexflow-context";
 
 type Note = string;
-type PatternData = { name: string; pattern: number[]; roots: Note[] };
-type Root = number;
+type ScaleData = { name: string; pattern: number[]; roots: Note[] };
 type State =
   | { type: "loading" }
   | { type: "error"; message: string }
   | {
       type: "selectPattern";
-      patterns: PatternData[];
-      firstPattern: PatternData;
+      patterns: ScaleData[];
+      firstPattern: ScaleData;
     }
-  | { type: "selectRoot"; pattern: PatternData }
+  | { type: "selectRoot"; pattern: ScaleData }
   | { type: "display"; notes: Note[] };
 
 export default function App() {
   const [state, setState] = React.useState<State>({ type: "loading" });
-  const [pattern, setPattern] = React.useState<PatternData | null>(null);
+  const [pattern, setPattern] = React.useState<ScaleData | null>(null);
   const [root, setRoot] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -37,7 +37,7 @@ export default function App() {
         message: ajv.errorsText(validate.errors)
       });
     } else {
-      const firstPattern: null | PatternData = List(patterns).first(null);
+      const firstPattern: null | ScaleData = List(patterns).first(null);
       if (!firstPattern) {
         setState({ type: "error", message: "patterns were empty" });
       } else {
@@ -70,7 +70,7 @@ export default function App() {
             style={styles.picker}
             onValueChange={value => setPattern(value)}
           >
-            {state.patterns.map((p: PatternData) => (
+            {state.patterns.map((p: ScaleData) => (
               <Picker.Item label={p.name} value={p} key={p.name} />
             ))}
           </Picker>
@@ -121,70 +121,47 @@ export default function App() {
         </View>
       );
     case "display":
-      var _notes = [
-        // A quarter-note C.
-        new Vex.Flow.StaveNote({
-          clef: "treble",
-          keys: ["c/4"],
-          duration: "q"
-        }),
-
-        // A quarter-note D.
-        new Vex.Flow.StaveNote({
-          clef: "treble",
-          keys: ["d/4"],
-          duration: "q"
-        }),
-
-        // A quarter-note rest. Note that the key (b/4) specifies the vertical
-        // position of the rest.
-        new Vex.Flow.StaveNote({
-          clef: "treble",
-          keys: ["b/4"],
-          duration: "qr"
-        }),
-
-        // A C-Major chord.
-        new Vex.Flow.StaveNote({
-          clef: "treble",
-          keys: ["c/4", "e/4", "g/4"],
-          duration: "q"
-        })
-      ];
-      // const _notes = state.notes.map((note: Note) =>
-      //
-      //   new Vex.Flow.StaveNote({
-      //     clef: "treble",
-      //     keys: [`${note}/5`],
-      //     duration: "q"
-      //   }).getKeys()
-      // );
+      const scale = state.notes
+        .map(
+          (note: Note) =>
+            new Vex.Flow.StaveNote({
+              clef: "treble",
+              keys: [`${note}/4`],
+              duration: `8`
+            })
+        )
+        .concat(
+          Array(8 - state.notes.length).fill(
+            new Vex.Flow.StaveNote({
+              clef: "treble",
+              keys: ["b/4"],
+              duration: "8r"
+            })
+          )
+        );
       const context = new ReactNativeSVGContext(NotoFontPack, styles.svg);
       const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 200);
-      const voice = new Vex.Flow.Voice({ num_beats: 4, beat_value: 4 });
-      voice.addTickables(_notes);
-
-      // Format and justify the notes to 400 pixels.
-      var formatter = new Vex.Flow.Formatter()
-        .joinVoices([voice])
-        .format([voice], 400);
-
-      // Render voice
-      voice.draw(context, stave);
-      // voice.addTickables(_notes);
       stave.setContext(context);
       // @ts-ignore
       stave.setClef("treble");
       // @ts-ignore
-      stave.setTimeSignature("4/4");
+      stave.setTimeSignature(`4/4`);
       stave.draw();
 
-      return (
-        <View>
-          {context.render()}
-          <Text>{`${_notes}`}</Text>
-        </View>
-      );
+      const voice = new Vex.Flow.Voice({
+        num_beats: 4,
+        beat_value: 4
+      });
+      voice.addTickables(scale);
+
+      // Format and justify the notes to 400 pixels.
+      new Vex.Flow.Formatter().joinVoices([voice]).format([voice], 100);
+
+      // Render voice
+      voice.draw(context, stave);
+      // voice.addTickables(_notes);
+
+      return <View>{context.render()}</View>;
   }
 }
 
