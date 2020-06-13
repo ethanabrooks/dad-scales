@@ -1,10 +1,10 @@
 import React from "react";
 import { Button, Picker, StyleSheet, Text, View } from "react-native";
-import { Map } from "immutable";
+import { List, Map } from "immutable";
 import patterns from "./patterns.json";
 
-const Ajv = require("ajv");
-const ajv = new Ajv({ allErrors: true });
+var Ajv = require("ajv");
+var ajv = new Ajv({ allErrors: true });
 ajv.addKeyword("matches", {
   type: "string",
   validate: function(schema: unknown, data: unknown) {
@@ -38,16 +38,15 @@ const schema = {
   }
 };
 
-type RawPatternData = { pattern: number[]; roots: string[] };
 type Note = [string, "sharp" | "flat" | null];
-type PatternData = { pattern: number[]; roots: Note[] };
+type PatternData = { name: string; pattern: number[]; roots: Note[] };
 type Root = number;
 type State =
   | { type: "loading" }
   | { type: "error"; message: string }
   | {
       type: "selectPattern";
-      patterns: Map<string, PatternData>;
+      patterns: List<PatternData>;
       firstPattern: PatternData;
     }
   | { type: "selectRoot"; pattern: PatternData }
@@ -59,36 +58,43 @@ export default function App() {
   const [root, setRoot] = React.useState<string>("A");
 
   React.useEffect(() => {
-    // ajv.compile(schema)(patterns);
-    const rawScalePatterns: null | Map<string, RawPatternData> = Map(patterns);
-    const patternMap: Map<string, PatternData> = rawScalePatterns.map(
-      (raw, name) => {
-        return {
-          ...raw,
-          roots: raw.roots.map(
-            (r: string): Note => {
-              switch (r[1]) {
-                case "#":
-                  return [r[0], "sharp"];
-                case "b":
-                  return [r[0], "flat"];
-                default:
-                  return [r[0], null];
-              }
-            }
-          )
-        };
-      }
-    );
-    const firstPattern: null | PatternData = patternMap.valueSeq().first(null);
-    if (!firstPattern) {
-      setState({ type: "error", message: "patterns were empty" });
-    } else {
+    let validate = ajv.compile(schema);
+    const valid = validate(patterns);
+    if (!valid) {
       setState({
-        type: "selectPattern",
-        patterns: patternMap,
-        firstPattern: firstPattern
+        type: "error",
+        message: `${ajv.errorsText(validate.errors)} ${typeof valid} ${valid}`
       });
+    } else {
+      const patternList: List<PatternData> = List(
+        patterns.map(pattern => {
+          return {
+            ...pattern,
+            roots: pattern.roots.map(
+              (r: string): Note => {
+                switch (r[1]) {
+                  case "#":
+                    return [r[0], "sharp"];
+                  case "b":
+                    return [r[0], "flat"];
+                  default:
+                    return [r[0], null];
+                }
+              }
+            )
+          };
+        })
+      );
+      const firstPattern: null | PatternData = patternList.first(null);
+      if (!firstPattern) {
+        setState({ type: "error", message: "patterns were empty" });
+      } else {
+        setState({
+          type: "selectPattern",
+          patterns: patternList,
+          firstPattern: firstPattern
+        });
+      }
     }
   }, []);
 
@@ -106,9 +112,9 @@ export default function App() {
             onValueChange={(value, itemIndex) => setPattern(value)}
           >
             {state.patterns
-              .toSeq()
-              .map((p, n) => <Picker.Item label={n} value={p} key={n} />)
-              .valueSeq()
+              .map((p: PatternData) => (
+                <Picker.Item label={p.name} value={p} key={p.name} />
+              ))
               .toArray()}
           </Picker>
           <Button
