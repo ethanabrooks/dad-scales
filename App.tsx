@@ -4,7 +4,7 @@ import { List } from "immutable";
 import patterns from "./patterns.json";
 import { ajv, schema } from "./schema";
 import Vex from "vexflow";
-import { musicContext } from "./music";
+import { Music, musicContext } from "./music";
 
 type Note = string;
 type ScaleData = { name: string; pattern: number[]; roots: Note[] };
@@ -141,7 +141,7 @@ export default function App() {
     case "display":
       return (
         <View>
-          {musicContext(state.notes, styles.svg).render()}
+          {new Music(state.notes, styles.svg).render()}
           <Button
             title="Back"
             onPress={() =>
