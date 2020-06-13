@@ -3,25 +3,99 @@ import { Button, Picker, StyleSheet, Text, View } from "react-native";
 import { Map } from "immutable";
 import patterns from "./patterns.json";
 
-type Pattern = { pattern: number[]; sharp: string[] };
+const Ajv = require("ajv");
+const ajv = new Ajv({ allErrors: true });
+ajv.addKeyword("matches", {
+  type: "string",
+  validate: function(schema: unknown, data: unknown) {
+    return (
+      typeof schema === "string" &&
+      typeof data === "string" &&
+      data.match(schema)
+    );
+  },
+  errors: true
+});
+const schema = {
+  type: "array",
+  minItems: 1,
+  items: {
+    type: "object",
+    properties: {
+      name: { type: "string" },
+      pattern: {
+        type: "array",
+        minItems: 1,
+        items: { type: "number", exclusiveMinimum: 0 }
+      },
+      roots: {
+        type: "array",
+        minItems: 1,
+        items: { type: "string", exclusiveMinimum: 0, matches: "^[A-G][#b]?$" },
+        required: ["name", "pattern", "roots"]
+      }
+    }
+  }
+};
+
+type RawPatternData = { pattern: number[]; roots: string[] };
+type Note = [string, "sharp" | "flat" | null];
+type PatternData = { pattern: number[]; roots: Note[] };
 type Root = number;
 type State =
-  | { type: "selectPattern" }
-  | { type: "selectRoot"; pattern: Pattern }
-  | { type: "display"; pattern: Pattern; root: Root };
+  | { type: "loading" }
+  | { type: "error"; message: string }
+  | {
+      type: "selectPattern";
+      patterns: Map<string, PatternData>;
+      firstPattern: PatternData;
+    }
+  | { type: "selectRoot"; pattern: PatternData }
+  | { type: "display"; pattern: PatternData; root: Root };
 
 export default function App() {
-  const [state, setState] = React.useState<State>({ type: "selectPattern" });
-  switch (state.type) {
-    case "selectPattern":
-      const scalePatterns: Map<string, Pattern> = Map(patterns);
-      const firstPattern: null | Pattern = scalePatterns
-        .valueSeq()
-        .first<null>();
-      if (!firstPattern) {
-        return <Text>"patterns.json is empty"</Text>;
-      } else {
-        const [pattern, setPattern] = React.useState<Pattern>(firstPattern);
+  const [state, setState] = React.useState<State>({ type: "loading" });
+  const [pattern, setPattern] = React.useState<PatternData | null>(null);
+  const [root, setRoot] = React.useState<string>("A");
+
+  React.useEffect(() => {
+    // ajv.compile(schema)(patterns);
+    const rawScalePatterns: null | Map<string, RawPatternData> = Map(patterns);
+    const patternMap: Map<string, PatternData> = rawScalePatterns.map(
+      (raw, name) => {
+        return {
+          ...raw,
+          roots: raw.roots.map(
+            (r: string): Note => {
+              switch (r[1]) {
+                case "#":
+                  return [r[0], "sharp"];
+                case "b":
+                  return [r[0], "flat"];
+                default:
+                  return [r[0], null];
+              }
+            }
+          )
+        };
+      }
+    );
+    const firstPattern: null | PatternData = patternMap.valueSeq().first(null);
+    if (!firstPattern) {
+      setState({ type: "error", message: "patterns were empty" });
+    } else {
+      setState({
+        type: "selectPattern",
+        patterns: patternMap,
+        firstPattern: firstPattern
+      });
+    }
+  }, []);
+  if (!pattern) {
+    setState({ type: "error", message: "Somehow pattern is null..." });
+  } else {
+    switch (state.type) {
+      case "selectPattern":
         return (
           <View style={styles.container}>
             <Picker
@@ -29,11 +103,9 @@ export default function App() {
               style={styles.picker}
               onValueChange={(value, itemIndex) => setPattern(value)}
             >
-              {scalePatterns
+              {state.patterns
                 .toSeq()
-                .map((p, n) => (
-                  <Picker.Item label={n} value={firstPattern} key={n} />
-                ))
+                .map((p, n) => <Picker.Item label={n} value={p} key={n} />)
                 .valueSeq()
                 .toArray()}
             </Picker>
@@ -43,34 +115,51 @@ export default function App() {
             />
           </View>
         );
-      }
-    case "selectRoot":
-      const [root, setRoot] = React.useState<string>("A");
-      return (
-        <View style={styles.container}>
-          <Picker
-            selectedValue={root}
-            style={styles.picker}
-            onValueChange={(value, itemIndex) => setRoot(value)}
-          >
-            <Picker.Item label={"A"} value={"A"} key={"A"} />
-          </Picker>
-          {
-            <Button
-              title="Select Scale"
-              onPress={() =>
-                setState({
-                  type: "display",
-                  pattern: state.pattern,
-                  root: 0
-                })
-              }
-            />
-          }
-        </View>
-      );
-    case "display":
-      break;
+      case "selectRoot":
+        return (
+          <View style={styles.container}>
+            <Picker
+              selectedValue={root}
+              style={styles.picker}
+              onValueChange={(value, itemIndex) => setRoot(value)}
+            >
+              {state.pattern.roots.map(note => {
+                const noteName = () => {
+                  switch (note[1]) {
+                    case "sharp":
+                      return `${note[0]}♯`;
+                    case "flat":
+                      return `${note[0]}♭`;
+                    default:
+                      return note[0];
+                  }
+                };
+                return (
+                  <Picker.Item
+                    label={noteName()}
+                    value={note}
+                    key={noteName()}
+                  />
+                );
+              })}
+            </Picker>
+            {
+              <Button
+                title="Select Scale"
+                onPress={() =>
+                  setState({
+                    type: "display",
+                    pattern: state.pattern,
+                    root: 0
+                  })
+                }
+              />
+            }
+          </View>
+        );
+      case "display":
+        break;
+    }
   }
 }
 
