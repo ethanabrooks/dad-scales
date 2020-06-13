@@ -31,7 +31,6 @@ type State =
     }
   | { type: "selectRoot"; pattern: PatternData }
   | { type: "display"; pattern: PatternData; root: Root };
-
 export default function App() {
   const [state, setState] = React.useState<State>({ type: "loading" });
   const [pattern, setPattern] = React.useState<PatternData | null>(null);

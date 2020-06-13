@@ -1,3 +1,10 @@
+import Vex from "vexflow";
+import { Map, Seq } from "immutable";
+
+const noteValues: Seq.Indexed<string> = Map(Vex.Flow.Music.noteValues).keySeq();
+
+const Ajv = require("ajv");
+export const ajv = new Ajv({ allErrors: true });
 export const schema = {
   type: "array",
   minItems: 1,
@@ -19,3 +26,9 @@ export const schema = {
     }
   }
 };
+ajv.addKeyword("isNoteValue", {
+  type: "string",
+  validate: (schema: boolean, data: unknown) =>
+    schema && typeof data === "string" && noteValues.includes(data),
+  errors: true
+});
