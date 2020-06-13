@@ -1,78 +1,61 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import patterns from "./patterns.json";
-import Vex from "vexflow";
-import { Music } from "./music";
 import RNPickerSelect from "react-native-picker-select";
-
+import patterns from "./patterns.json";
+import { Music } from "./music";
+import Vex from "vexflow";
 type Note = string;
 type Pattern = { name: string; pattern: number[]; roots: Note[] };
-type State =
-  | { type: "loading" }
-  | { type: "error"; message: string }
-  | {
-      type: "selectPattern";
-      pattern: Pattern;
-      patterns: Pattern[];
-    }
-  | {
-      type: "selectRoot";
-      pattern: Pattern;
-      patterns: Pattern[];
-      root: Note;
-    }
-  | {
-      type: "display";
-      pattern: Pattern;
-      patterns: Pattern[];
-      root: Note;
-      notes: Note[];
-    };
 
 export default function App() {
-  const [pattern, setPattern] = React.useState<Pattern | null>(null);
+  const [scale, setScale] = React.useState<Pattern | null>(null);
   const [root, setRoot] = React.useState<Note | null>(null);
-  let patternPicker = (
+  const patternPicker = (
     <RNPickerSelect
       placeholder={{
         label: "Select a scale type...",
         value: null
       }}
-      onValueChange={(_, i) => setPattern(patterns[i])}
-      items={patterns.map((p: Pattern) => ({
-        label: p.name,
-        value: p
-      }))}
+      onValueChange={(_, i) => setScale(patterns[i - 1])}
+      items={patterns.map((p: Pattern) => {
+        return {
+          label: p.name,
+          value: p.name
+        };
+      })}
     />
   );
   const rootPicker =
-    pattern && pattern.roots ? (
+    scale && scale.roots ? (
       <RNPickerSelect
         placeholder={{
           label: "Select a scale root...",
           value: null
         }}
-        onValueChange={(_, i) => setRoot(pattern.roots[i])}
-        items={pattern.roots.map(note => ({ label: note, value: note }))}
+        onValueChange={setRoot}
+        items={scale.roots.map(note => ({ label: note, value: note }))}
       />
     ) : null;
   const sheetmusic = () => {
-    if (pattern && root) {
+    if (scale && root) {
       const music = new Vex.Flow.Music();
       const scaleTones: number[] = music.getScaleTones(
         // @ts-ignore
         music.getNoteValue(root),
-        pattern
+        [0].concat(scale.pattern)
       );
+      console.log([0].concat(scale.pattern));
+      console.log(music.getNoteValue(root));
       const notes = scaleTones.map(t => music.getCanonicalNoteName(t));
       return new Music(notes, styles.svg).render();
     }
   };
+  let message = sheetmusic();
   return (
     <View style={styles.container}>
       {patternPicker}
       {rootPicker}
-      {sheetmusic()}
+      {message}
     </View>
   );
 }
