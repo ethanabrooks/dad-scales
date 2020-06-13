@@ -3,10 +3,12 @@ import { Button, Picker, StyleSheet, Text, View } from "react-native";
 import { List } from "immutable";
 import patterns from "./patterns.json";
 import { ajv, schema } from "./schema";
-import Canvas, { ImageData } from "react-native-canvas";
-import { Image, ScrollView, StatusBar } from "react-native";
-import * as VF from "vexflow";
-VF = Vex.Flow;
+import Vex from "vexflow";
+import {
+  NotoFontPack,
+  ReactNativeSVGContext
+} from "standalone-vexflow-context";
+
 type Note = [string, "sharp" | "flat" | null];
 type PatternData = { name: string; pattern: number[]; roots: Note[] };
 type Root = number;
@@ -20,32 +22,11 @@ type State =
     }
   | { type: "selectRoot"; pattern: PatternData }
   | { type: "display"; pattern: PatternData; root: Root };
+
 export default function App() {
   const [state, setState] = React.useState<State>({ type: "loading" });
   const [pattern, setPattern] = React.useState<PatternData | null>(null);
   const [root, setRoot] = React.useState<string>("A");
-
-  const handleImageData = (canvas: Canvas) => {
-    canvas.width = 100;
-    canvas.height = 100;
-
-    const context = canvas.getContext("2d");
-    var stave = new VF.Stave(10, 40, 400);
-
-    context.fillStyle = "purple";
-    context.fillRect(0, 0, 100, 100);
-    context.getImageData(0, 0, 100, 100).then(imageData => {
-      const data = Object.values(imageData.data);
-      const length = Object.keys(data).length;
-      for (let i = 0; i < length; i += 4) {
-        data[i] = 0;
-        data[i + 1] = 0;
-        data[i + 2] = 0;
-      }
-      const imgData = new ImageData(canvas, data, 100, 100);
-      context.putImageData(imgData, 0, 0);
-    });
-  };
 
   React.useEffect(() => {
     let validate = ajv.compile(schema);
@@ -164,20 +145,19 @@ export default function App() {
         </View>
       );
     case "display":
-      return (
-        <View style={styles.container}>
-          <StatusBar hidden={true} />
-          <View style={styles.example}>
-            <View style={styles.exampleLeft}>{handleImageData}</View>
-            <View style={styles.exampleRight}>
-              <Image
-                source={require("./images/purple-black-rect.png")}
-                style={{ width: 100, height: 100 }}
-              />
-            </View>
-          </View>
-        </View>
-      );
+      const context = new ReactNativeSVGContext(NotoFontPack, {
+        width: 400,
+        height: 400
+      });
+      const stave = new Vex.Flow.Stave(100, 150, 200);
+      stave.setContext(context);
+      // @ts-ignore
+      stave.setClef("treble");
+      // @ts-ignore
+      stave.setTimeSignature("4/4");
+      stave.draw();
+
+      return <View>{context.render()}</View>;
   }
 }
 
