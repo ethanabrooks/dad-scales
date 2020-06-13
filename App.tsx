@@ -1,8 +1,6 @@
 import React from "react";
-import { Button, Picker, StyleSheet, Text, View } from "react-native";
-import { List } from "immutable";
+import { StyleSheet, View } from "react-native";
 import patterns from "./patterns.json";
-import { ajv, schema } from "./schema";
 import Vex from "vexflow";
 import { Music } from "./music";
 import RNPickerSelect from "react-native-picker-select";
@@ -70,14 +68,11 @@ export default function App() {
       return new Music(notes, styles.svg).render();
     }
   };
-  let message = sheetmusic();
-  console.log(message);
-
   return (
     <View style={styles.container}>
       {patternPicker}
       {rootPicker}
-      {message}
+      {sheetmusic()}
     </View>
   );
 }
