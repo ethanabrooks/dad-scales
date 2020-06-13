@@ -63,7 +63,7 @@ export default function App() {
     if (!valid) {
       setState({
         type: "error",
-        message: `${ajv.errorsText(validate.errors)} ${typeof valid} ${valid}`
+        message: ajv.errorsText(validate.errors)
       });
     } else {
       const patternList: List<PatternData> = List(
@@ -100,9 +100,19 @@ export default function App() {
 
   switch (state.type) {
     case "loading":
-      return <Text>Loading…</Text>;
+      return <Text style={styles.container}>Loading…</Text>;
     case "error":
-      return <Text>{state.message}</Text>;
+      return (
+        <View style={styles.error}>
+          <Text style={{ fontWeight: "bold" }}>Error!</Text>
+          <Text>🙀</Text>
+          <Text style={{ textAlign: "center" }}>{state.message}</Text>
+        </View>
+        // <View style={styles.container}>
+        //   <Text>{state.message}</Text>;
+        // </View>
+      );
+
     case "selectPattern":
       return (
         <View style={styles.container}>
@@ -183,5 +193,6 @@ const styles = StyleSheet.create({
   },
   buttonStyle: {
     alignSelf: "center"
-  }
+  },
+  error: { flex: 1, justifyContent: "center", alignItems: "center" }
 });
