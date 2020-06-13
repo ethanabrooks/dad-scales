@@ -1,22 +1,9 @@
 import React from "react";
 import { Button, Picker, StyleSheet, Text, View } from "react-native";
-import { List } from "immutable";
+import { List, Map, Seq } from "immutable";
 import patterns from "./patterns.json";
-import { schema } from "./schema";
-
-var Ajv = require("ajv");
-var ajv = new Ajv({ allErrors: true });
-ajv.addKeyword("matches", {
-  type: "string",
-  validate: function(schema: unknown, data: unknown) {
-    return (
-      typeof schema === "string" &&
-      typeof data === "string" &&
-      data.match(schema)
-    );
-  },
-  errors: true
-});
+import { schema, ajv } from "./schema";
+import Vex from "vexflow";
 
 type Note = [string, "sharp" | "flat" | null];
 type PatternData = { name: string; pattern: number[]; roots: Note[] };
