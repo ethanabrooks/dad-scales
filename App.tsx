@@ -4,36 +4,34 @@ import { List } from "immutable";
 import patterns from "./patterns.json";
 import { ajv, schema } from "./schema";
 import Vex from "vexflow";
-import { Music, musicContext } from "./music";
+import { Music } from "./music";
 
 type Note = string;
-type ScaleData = { name: string; pattern: number[]; roots: Note[] };
+type Pattern = { name: string; pattern: number[]; roots: Note[] };
 type State =
   | { type: "loading" }
   | { type: "error"; message: string }
   | {
       type: "selectPattern";
-      patterns: ScaleData[];
-      firstPattern: ScaleData;
+      pattern: Pattern;
+      patterns: Pattern[];
     }
   | {
       type: "selectRoot";
-      pattern: ScaleData;
-      patterns: ScaleData[];
-      firstPattern: ScaleData;
+      pattern: Pattern;
+      patterns: Pattern[];
+      root: Note;
     }
   | {
       type: "display";
+      pattern: Pattern;
+      patterns: Pattern[];
+      root: Note;
       notes: Note[];
-      pattern: ScaleData;
-      patterns: ScaleData[];
-      firstPattern: ScaleData;
     };
 
 export default function App() {
   const [state, setState] = React.useState<State>({ type: "loading" });
-  const [pattern, setPattern] = React.useState<ScaleData | null>(null);
-  const [root, setRoot] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let validate = ajv.compile(schema);
@@ -44,72 +42,82 @@ export default function App() {
         message: ajv.errorsText(validate.errors)
       });
     } else {
-      const firstPattern: null | ScaleData = List(patterns).first(null);
+      const firstPattern: null | Pattern = List(patterns).first(null);
       if (!firstPattern) {
         setState({ type: "error", message: "patterns were empty" });
       } else {
         setState({
           type: "selectPattern",
           patterns: patterns,
-          firstPattern: firstPattern
+          pattern: firstPattern
         });
       }
     }
   }, []);
 
+  const errorScreen = (message: string) => (
+    <View style={styles.error}>
+      <Text style={{ fontWeight: "bold" }}>Error!</Text>
+      <Text>🙀</Text>
+      <Text style={{ textAlign: "center" }}>{message}</Text>
+    </View>
+  );
+
   switch (state.type) {
     case "loading":
       return <Text style={styles.container}>Loading…</Text>;
     case "error":
-      return (
-        <View style={styles.error}>
-          <Text style={{ fontWeight: "bold" }}>Error!</Text>
-          <Text>🙀</Text>
-          <Text style={{ textAlign: "center" }}>{state.message}</Text>
-        </View>
-      );
-
+      return errorScreen(state.message);
     case "selectPattern":
-      return (
-        <View style={styles.container}>
-          <Picker
-            selectedValue={state.firstPattern}
-            style={styles.picker}
-            onValueChange={value => setPattern(value)}
-          >
-            {state.patterns.map((p: ScaleData) => (
-              <Picker.Item label={p.name} value={p} key={p.name} />
-            ))}
-          </Picker>
-          <Button
-            title="Select Scale"
-            onPress={() =>
-              setState({
-                ...state,
-                type: "selectRoot",
-                pattern: pattern || state.firstPattern
-              })
+      const root = List(state.pattern.roots).first(null);
+      if (!root) {
+        return errorScreen("roots were empty");
+      } else {
+        return (
+          <View style={styles.container}>
+            <Picker
+              selectedValue={state.pattern}
+              style={styles.picker}
+              onValueChange={value =>
+                setState({
+                  ...state,
+                  pattern: value
+                })
+              }
+            >
+              {state.patterns.map((p: Pattern) => (
+                <Picker.Item label={p.name} value={p} key={p.name} />
+              ))}
+            </Picker>
+            {
+              <Button
+                title="Select Scale"
+                onPress={() =>
+                  setState({
+                    ...state,
+                    type: "selectRoot",
+                    root: root
+                  })
+                }
+              />
             }
-          />
-        </View>
-      );
+          </View>
+        );
+      }
     case "selectRoot":
       const music = new Vex.Flow.Music();
-      let key: number = music.getNoteValue(
-        root || List(state.pattern.roots).first()
-      );
       const scaleTones: number[] = music.getScaleTones(
         // @ts-ignore
-        key,
+        music.getNoteValue(state.root),
         state.pattern.pattern
       );
       const notes = scaleTones.map(t => music.getCanonicalNoteName(t));
       return (
         <View style={styles.container}>
           <Picker
-            selectedValue={root}
+            selectedValue={state.root}
             style={styles.picker}
-            onValueChange={setRoot}
+            onValueChange={value => setState({ ...state, root: value })}
           >
             {state.pattern.roots.map(note => (
               <Picker.Item label={note} value={note} key={note} />
