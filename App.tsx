@@ -99,12 +99,12 @@ export default function App() {
       );
     case "selectRoot":
       const music = new Vex.Flow.Music();
-      let keyValue: number = music.getNoteValue(
+      let key: number = music.getNoteValue(
         root || List(state.pattern.roots).first()
       );
       const scaleTones: number[] = music.getScaleTones(
         // @ts-ignore
-        keyValue,
+        key,
         state.pattern.pattern
       );
       const notes = scaleTones.map(t => music.getCanonicalNoteName(t));
@@ -119,25 +119,27 @@ export default function App() {
               <Picker.Item label={note} value={note} key={note} />
             ))}
           </Picker>
-          <Button
-            title="Select Scale"
-            onPress={() =>
-              setState({
-                ...state,
-                type: "display",
-                notes: notes
-              })
-            }
-          />
-          <Button
-            title="Back"
-            onPress={() =>
-              setState({
-                ...state,
-                type: "selectPattern"
-              })
-            }
-          />
+          <View style={styles.buttons}>
+            <Button
+              title="Select Scale"
+              onPress={() =>
+                setState({
+                  ...state,
+                  type: "display",
+                  notes: notes
+                })
+              }
+            />
+            <Button
+              title="Back"
+              onPress={() =>
+                setState({
+                  ...state,
+                  type: "selectPattern"
+                })
+              }
+            />
+          </View>
         </View>
       );
     case "display":
@@ -172,7 +174,7 @@ export default function App() {
             )
           );
 
-        const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 400);
+        const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 300);
         stave.setContext(context);
         // @ts-ignore
         stave.setClef("treble");
@@ -215,6 +217,11 @@ const styles = StyleSheet.create({
   },
   buttonStyle: {
     alignSelf: "center"
+  },
+  buttons: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center"
   },
   error: { flex: 1, justifyContent: "center", alignItems: "center" },
   svg: {
