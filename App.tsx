@@ -87,7 +87,7 @@ export default function App() {
       );
     case "selectRoot":
       const music = new Vex.Flow.Music();
-      let keyValue = music.getNoteValue(
+      let keyValue: number = music.getNoteValue(
         root || List(state.pattern.roots).first()
       );
       const scaleTones: number[] = music.getScaleTones(
@@ -121,16 +121,56 @@ export default function App() {
         </View>
       );
     case "display":
-      const _notes = state.notes.map((note: Note) =>
+      var _notes = [
+        // A quarter-note C.
         new Vex.Flow.StaveNote({
           clef: "treble",
-          keys: [`${note}/5`],
+          keys: ["c/4"],
           duration: "q"
-        }).getKeys()
-      );
+        }),
+
+        // A quarter-note D.
+        new Vex.Flow.StaveNote({
+          clef: "treble",
+          keys: ["d/4"],
+          duration: "q"
+        }),
+
+        // A quarter-note rest. Note that the key (b/4) specifies the vertical
+        // position of the rest.
+        new Vex.Flow.StaveNote({
+          clef: "treble",
+          keys: ["b/4"],
+          duration: "qr"
+        }),
+
+        // A C-Major chord.
+        new Vex.Flow.StaveNote({
+          clef: "treble",
+          keys: ["c/4", "e/4", "g/4"],
+          duration: "q"
+        })
+      ];
+      // const _notes = state.notes.map((note: Note) =>
+      //
+      //   new Vex.Flow.StaveNote({
+      //     clef: "treble",
+      //     keys: [`${note}/5`],
+      //     duration: "q"
+      //   }).getKeys()
+      // );
       const context = new ReactNativeSVGContext(NotoFontPack, styles.svg);
       const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 200);
       const voice = new Vex.Flow.Voice({ num_beats: 4, beat_value: 4 });
+      voice.addTickables(_notes);
+
+      // Format and justify the notes to 400 pixels.
+      var formatter = new Vex.Flow.Formatter()
+        .joinVoices([voice])
+        .format([voice], 400);
+
+      // Render voice
+      voice.draw(context, stave);
       // voice.addTickables(_notes);
       stave.setContext(context);
       // @ts-ignore
