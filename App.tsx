@@ -1,9 +1,10 @@
 import React from "react";
 import { Button, Picker, StyleSheet, Text, View } from "react-native";
-import { List, Map, Seq } from "immutable";
+import { List } from "immutable";
 import patterns from "./patterns.json";
-import { schema, ajv } from "./schema";
-import Vex from "vexflow";
+import { ajv, schema } from "./schema";
+import Canvas, { ImageData } from "react-native-canvas";
+import { Image, ScrollView, StatusBar } from "react-native";
 
 type Note = [string, "sharp" | "flat" | null];
 type PatternData = { name: string; pattern: number[]; roots: Note[] };
@@ -22,6 +23,26 @@ export default function App() {
   const [state, setState] = React.useState<State>({ type: "loading" });
   const [pattern, setPattern] = React.useState<PatternData | null>(null);
   const [root, setRoot] = React.useState<string>("A");
+
+  const handleImageData = (canvas: Canvas) => {
+    canvas.width = 100;
+    canvas.height = 100;
+
+    const context = canvas.getContext("2d");
+    context.fillStyle = "purple";
+    context.fillRect(0, 0, 100, 100);
+    context.getImageData(0, 0, 100, 100).then(imageData => {
+      const data = Object.values(imageData.data);
+      const length = Object.keys(data).length;
+      for (let i = 0; i < length; i += 4) {
+        data[i] = 0;
+        data[i + 1] = 0;
+        data[i + 2] = 0;
+      }
+      const imgData = new ImageData(canvas, data, 100, 100);
+      context.putImageData(imgData, 0, 0);
+    });
+  };
 
   React.useEffect(() => {
     let validate = ajv.compile(schema);
@@ -141,12 +162,37 @@ export default function App() {
       );
     case "display":
       return (
-        <View style={styles.error}>
-          <Text style={{ fontWeight: "bold" }}>display</Text>
+        <View style={styles.container}>
+          <StatusBar hidden={true} />
+          <View style={styles.example}>
+            <View style={styles.exampleLeft}>{handleImageData}</View>
+            <View style={styles.exampleRight}>
+              <Image
+                source={require("./images/purple-black-rect.png")}
+                style={{ width: 100, height: 100 }}
+              />
+            </View>
+          </View>
         </View>
       );
   }
 }
+
+const commonStyles = StyleSheet.create({
+  full: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%"
+  },
+  cell: {
+    flex: 1,
+    padding: 10,
+    justifyContent: "center",
+    alignItems: "center"
+  }
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -161,5 +207,21 @@ const styles = StyleSheet.create({
   buttonStyle: {
     alignSelf: "center"
   },
-  error: { flex: 1, justifyContent: "center", alignItems: "center" }
+  error: { flex: 1, justifyContent: "center", alignItems: "center" },
+  examples: {
+    ...commonStyles.full,
+    padding: 5,
+    paddingBottom: 0
+  },
+  example: {
+    paddingBottom: 5,
+    flex: 1,
+    flexDirection: "row"
+  },
+  exampleLeft: {
+    ...commonStyles.cell
+  },
+  exampleRight: {
+    ...commonStyles.cell
+  }
 });
