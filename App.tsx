@@ -122,20 +122,23 @@ export default function App() {
       );
     case "display":
       const scale = state.notes
-        .map(
-          (note: Note) =>
-            new Vex.Flow.StaveNote({
-              clef: "treble",
-              keys: [`${note}/4`],
-              duration: `8`
-            })
-        )
+        .map((note: Note) => {
+          let staveNote = new Vex.Flow.StaveNote({
+            clef: "treble",
+            keys: [`${note}/4`],
+            duration: `8`
+          });
+          let accidental = note[1];
+          return "#b".includes(accidental)
+            ? staveNote.addAccidental(0, new Vex.Flow.Accidental(accidental))
+            : staveNote;
+        })
         .concat(
           Array(8 - state.notes.length).fill(
             new Vex.Flow.StaveNote({
               clef: "treble",
-              keys: ["b/4"],
-              duration: "8r"
+              keys: ["bb/4"],
+              duration: "8"
             })
           )
         );
