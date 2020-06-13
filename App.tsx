@@ -101,7 +101,7 @@ export default function App() {
       return (
         <View style={styles.container}>
           <Picker
-            selectedValue={pattern}
+            selectedValue={state.firstPattern}
             style={styles.picker}
             onValueChange={(value, itemIndex) => setPattern(value)}
           >
@@ -113,7 +113,12 @@ export default function App() {
           </Picker>
           <Button
             title="Select Scale"
-            onPress={() => setState({ type: "selectRoot", pattern: pattern })}
+            onPress={() =>
+              setState({
+                type: "selectRoot",
+                pattern: pattern || state.firstPattern
+              })
+            }
           />
         </View>
       );
