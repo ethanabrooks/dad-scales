@@ -20,8 +20,19 @@ type State =
       patterns: ScaleData[];
       firstPattern: ScaleData;
     }
-  | { type: "selectRoot"; pattern: ScaleData }
-  | { type: "display"; notes: Note[] };
+  | {
+      type: "selectRoot";
+      pattern: ScaleData;
+      patterns: ScaleData[];
+      firstPattern: ScaleData;
+    }
+  | {
+      type: "display";
+      notes: Note[];
+      pattern: ScaleData;
+      patterns: ScaleData[];
+      firstPattern: ScaleData;
+    };
 
 export default function App() {
   const [state, setState] = React.useState<State>({ type: "loading" });
@@ -78,6 +89,7 @@ export default function App() {
             title="Select Scale"
             onPress={() =>
               setState({
+                ...state,
                 type: "selectRoot",
                 pattern: pattern || state.firstPattern
               })
@@ -107,17 +119,25 @@ export default function App() {
               <Picker.Item label={note} value={note} key={note} />
             ))}
           </Picker>
-          {
-            <Button
-              title="Select Scale"
-              onPress={() =>
-                setState({
-                  type: "display",
-                  notes: notes
-                })
-              }
-            />
-          }
+          <Button
+            title="Select Scale"
+            onPress={() =>
+              setState({
+                ...state,
+                type: "display",
+                notes: notes
+              })
+            }
+          />
+          <Button
+            title="Back"
+            onPress={() =>
+              setState({
+                ...state,
+                type: "selectPattern"
+              })
+            }
+          />
         </View>
       );
     case "display":
@@ -130,7 +150,7 @@ export default function App() {
         setState({ type: "error", message: "Mis-computed numNotes." });
       } else {
         const context = new ReactNativeSVGContext(NotoFontPack, styles.svg);
-        const _notes = state.notes
+        const scale = state.notes
           .map((note: Note) => {
             let staveNote = new Vex.Flow.StaveNote({
               clef: "treble",
@@ -159,42 +179,26 @@ export default function App() {
         // @ts-ignore
         stave.setTimeSignature(`4/4`);
         stave.draw();
-        var beams = Vex.Flow.Beam.generateBeams(_notes);
-        Vex.Flow.Formatter.FormatAndDraw(context, stave, _notes);
+        const beams = Vex.Flow.Beam.generateBeams(scale);
+        Vex.Flow.Formatter.FormatAndDraw(context, stave, scale);
         beams.forEach(function(b) {
           b.setContext(context).draw();
         });
-        // const step = numNotes / 4;
-        // const beams = Range(0, numNotes, step).map(
-        //   start => new Vex.Flow.Beam(scale.slice(start, start + step))
-        // );
-        // const context = new ReactNativeSVGContext(NotoFontPack, styles.svg);
-        // const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 200);
-        // Vex.Flow.Formatter.FormatAndDraw(context, stave, scale);
-        // stave.setContext(context);
-        // // @ts-ignore
-        // stave.setClef("treble");
-        // // @ts-ignore
-        // stave.setTimeSignature(`4/4`);
-        // stave.draw();
-        //
-        // const voice = new Vex.Flow.Voice({
-        //   num_beats: 4,
-        //   beat_value: 4
-        // });
-        // voice.addTickables(scale);
-        //
-        // // Format and justify the notes to 400 pixels.
-        // new Vex.Flow.Formatter().joinVoices([voice]).format([voice], 100);
-        //
-        // // Render voice
-        // voice.draw(context, stave);
-        // voice.addTickables(_notes);
-        // beams.forEach(function(b) {
-        //   b.setContext(context).draw();
-        // });
 
-        return <View>{context.render()}</View>;
+        return (
+          <View>
+            {context.render()}
+            <Button
+              title="Back"
+              onPress={() =>
+                setState({
+                  ...state,
+                  type: "selectRoot"
+                })
+              }
+            />
+          </View>
+        );
       }
   }
 }
