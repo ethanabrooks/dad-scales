@@ -5,7 +5,8 @@ import patterns from "./patterns.json";
 import { ajv, schema } from "./schema";
 import Canvas, { ImageData } from "react-native-canvas";
 import { Image, ScrollView, StatusBar } from "react-native";
-
+import * as VF from "vexflow";
+VF = Vex.Flow;
 type Note = [string, "sharp" | "flat" | null];
 type PatternData = { name: string; pattern: number[]; roots: Note[] };
 type Root = number;
@@ -29,6 +30,8 @@ export default function App() {
     canvas.height = 100;
 
     const context = canvas.getContext("2d");
+    var stave = new VF.Stave(10, 40, 400);
+
     context.fillStyle = "purple";
     context.fillRect(0, 0, 100, 100);
     context.getImageData(0, 0, 100, 100).then(imageData => {
