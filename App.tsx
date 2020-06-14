@@ -17,28 +17,33 @@ export default function App() {
     roots: roots.map(note => Note.fromString(note)).filter(notEmpty),
     ...pattern
   }));
+  console.log("scale", scale);
   const patternPicker = (
-    <View style={styles.picker}>
-      <Picker onValueChange={(_, i) => setScale(patterns[i - 1])}>
-        {patterns.map((p: Pattern, i: number) => (
-          <Picker.Item label={p.name} value={i} key={i} />
-        ))}
-      </Picker>
-    </View>
+    <Picker
+      style={styles.picker}
+      onValueChange={(_, i) => setScale(patterns[i - 1])}
+      selectedValue={scale ? scale.name : "Select scale"}
+    >
+      {patterns.map((p: Pattern, i: number) => (
+        <Picker.Item label={p.name} value={p.name} key={p.name} />
+      ))}
+    </Picker>
   );
   const rootPicker = () => {
     if (scale && scale.roots) {
       return (
-        <View style={styles.picker}>
-          <Picker onValueChange={i => setRoot(scale.roots[i])}>
-            {scale.roots
-              .map(n => n.unicodeString())
-              .map((label, i) =>
-                label ? <Picker.Item label={label} value={i} key={i} /> : null
-              )
-              .filter(notEmpty)}
-          </Picker>
-        </View>
+        <Picker
+          onValueChange={i => setRoot(scale.roots[i])}
+          selectedValue={root}
+          style={styles.picker}
+        >
+          {scale.roots
+            .map(n => n.unicodeString())
+            .map((label, i) =>
+              label ? <Picker.Item label={label} value={i} key={i} /> : null
+            )
+            .filter(notEmpty)}
+        </Picker>
       );
     }
   };
@@ -65,35 +70,37 @@ export default function App() {
     };
     return <View style={sqStyle} />;
   };
+  // {patternPicker}
+  // {rootPicker()}
+  // <View style={styles.music}>{sheetmusic()}</View>
   return (
     <View style={styles.container}>
-      <View style={styles.pickers}>
-        {patternPicker}
-        {rootPicker()}
+      <View style={{ backgroundColor: "gray", ...styles.pickers }}>
+        <View style={{ backgroundColor: "blue", ...styles.picker }} />
+        <View style={{ backgroundColor: "red", ...styles.picker }} />
       </View>
-      <View style={styles.music}>{sheetmusic()}</View>
+      <View style={{ backgroundColor: "green", ...styles.music }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    position: "relative",
-    top: "5%",
+    flex: 1,
+    justifyContent: "space-between",
     alignItems: "center"
   },
   picker: {
-    height: 50
+    height: "20%"
   },
   pickers: {
-    flex: 1,
-    paddingVertical: 5,
+    justifyContent: "space-evenly",
+    flex: 3,
     width: "100%"
   },
   music: {
-    position: "relative",
-    top: "40%",
-    width: "95%"
+    flex: 1,
+    width: "100%"
   },
   svg: {
     position: "absolute",
