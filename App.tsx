@@ -33,11 +33,10 @@ export default function App() {
       }))}
     />
   );
-
   const rootPicker = () => {
     if (scale && scale.roots) {
       const items = scale.roots
-        .map(n => n.string())
+        .map(n => n.unicodeString())
         .map((label, i) => (label ? { label: label, value: i } : null))
         .filter(notEmpty);
       return (
@@ -46,7 +45,7 @@ export default function App() {
             label: "Select a scale root...",
             value: null
           }}
-          onValueChange={v => setRoot(new Note(v))}
+          onValueChange={i => setRoot(scale.roots[i])}
           items={items}
         />
       );
@@ -56,10 +55,10 @@ export default function App() {
     if (scale && root) {
       const music = new Vex.Flow.Music();
       const keyValue: number = root.getIndex();
-      const notes: string[] = music
+      const notes: Note[] = music
         // @ts-ignore
         .getScaleTones(keyValue, scale.pattern)
-        .map((v: number) => music.getCanonicalNoteName(v));
+        .map((v: number) => new Note(v, root.getAccidental()));
       return new Music(notes, styles.svg).render();
     }
   };

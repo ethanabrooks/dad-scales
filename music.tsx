@@ -3,10 +3,9 @@ import Vex from "vexflow";
 import {
   NotoFontPack,
   ReactNativeSVGContext
-  // @ts-ignore
 } from "standalone-vexflow-context";
+import { Note } from "./note";
 
-type Note = string;
 export class Music {
   context: ReactNativeSVGContext;
   render() {
@@ -22,19 +21,36 @@ export class Music {
       throw Error("Mis-computed numNotes.");
     } else {
       this.context = new ReactNativeSVGContext(NotoFontPack, style);
+      let initializer: {
+        octave: number;
+        last: Note | null;
+        staveNotes: Vex.Flow.StaveNote[];
+      } = {
+        octave: 4,
+        last: null,
+        staveNotes: []
+      };
       const scale = notes
-        .map((note: Note) => {
+        .reduce(({ octave, last, staveNotes }, note: Note) => {
+          if (last ? last.getIndex() > note.getIndex() : false) {
+            octave++;
+          }
           let staveNote = new Vex.Flow.StaveNote({
             clef: "treble",
-            keys: [`${note}/4`],
+            keys: [`${note.asciiString()}/${octave}`],
             duration: `${numNotes}`
           });
-          let accidental = note[1];
-          return "#b".includes(accidental)
-            ? staveNote.addAccidental(0, new Vex.Flow.Accidental(accidental))
-            : staveNote;
-        })
-        .concat(
+          const accidental = note.vexFlowAccidental();
+          if (accidental) {
+            staveNote = staveNote.addAccidental(0, accidental);
+          }
+          return {
+            octave: octave,
+            last: note,
+            staveNotes: staveNotes.concat(staveNote)
+          };
+        }, initializer)
+        .staveNotes.concat(
           Array(numNotes - notes.length).fill(
             new Vex.Flow.StaveNote({
               clef: "treble",

@@ -1,4 +1,5 @@
 import { Map } from "immutable";
+import Vex from "vexflow";
 
 export const tones = [
   { sharp: "c", flat: "c" },
@@ -16,14 +17,15 @@ export const tones = [
 ];
 
 type Entry = [string, Note];
+type Accidental = "sharp" | "flat" | null;
 
 export class Note {
   index: number;
-  sharp: boolean;
+  accidental: Accidental;
 
-  constructor(index: number, sharp: boolean = false) {
+  constructor(index: number, accidental: Accidental) {
     this.index = index;
-    this.sharp = sharp;
+    this.accidental = accidental;
   }
 
   static fromString(s: string): undefined | Note {
@@ -34,20 +36,40 @@ export class Note {
     return this.index;
   }
 
-  string() {
+  getAccidental() {
+    return this.accidental;
+  }
+
+  vexFlowAccidental() {
+    switch (this.accidental) {
+      case "sharp":
+        return new Vex.Flow.Accidental("#");
+      case "flat":
+        return new Vex.Flow.Accidental("b");
+      default:
+        return null;
+    }
+  }
+
+  asciiString() {
     let tone = tones[this.index];
     if (tone) {
-      if (this.sharp) {
-        return this.sharp ? tone.sharp : tone.flat;
-      }
+      return this.accidental == "flat" ? tone.flat : tone.sharp;
     }
+  }
+
+  unicodeString() {
+    let asciiString = this.asciiString();
+    return asciiString
+      ? asciiString.replace(/([a-z])b/, "$1♭").replace(/([a-z])#/, "$1♯")
+      : null;
   }
 }
 
 const toneIndexes: Map<String, Note> = Map(
   tones.flatMap(({ sharp, flat }, i) => {
-    let e1: Entry = [sharp, new Note(i, true)];
-    let e2: Entry = [flat, new Note(i, false)];
+    let e1: Entry = [sharp, new Note(i, "sharp")];
+    let e2: Entry = [flat, new Note(i, "flat")];
     return [e1, e2];
   })
 );
