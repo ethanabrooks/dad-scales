@@ -32,6 +32,7 @@ export default function App() {
           label: p.name,
           value: p.name
         }))}
+        style={{ ...styles }}
       />
     </View>
   );
@@ -50,6 +51,7 @@ export default function App() {
             }}
             onValueChange={i => setRoot(scale.roots[i])}
             items={items}
+            style={{ ...styles }}
           />
         </View>
       );
@@ -93,24 +95,41 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     position: "relative",
-    top: "30%",
+    top: "5%",
     alignItems: "center"
   },
   picker: {
-    height: 100
+    height: 50
   },
   pickers: {
     flex: 1,
-    height: 200,
-    justifyContent: "space-around"
+    paddingVertical: 5,
+    width: "100%"
   },
   music: {
     position: "relative",
-    top: "50%",
+    top: "40%",
     width: "95%"
   },
   svg: {
     position: "absolute",
     width: "100%"
+  },
+  placeholder: {
+    fontSize: 26,
+    color: "black"
+  },
+  inputIOS: {
+    fontSize: 26,
+    textAlign: "center",
+    width: "100%",
+    paddingTop: 13,
+    paddingHorizontal: 10,
+    paddingBottom: 10,
+    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: "white",
+    backgroundColor: "#f8f8ff",
+    color: "#696969"
   }
 });
