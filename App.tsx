@@ -41,18 +41,10 @@ export default function App() {
     if (scale && root) {
       const music = new Vex.Flow.Music();
       let keyValue: number = music.getNoteValue(root);
-      const notes: string[] = scale.pattern
-        .reduce(
-          ({ notes, prev }, cur: number) => {
-            const note = (prev + cur) % Vex.Flow.Music.NUM_TONES;
-            return { notes: notes.concat(note), prev: note };
-          },
-          { notes: [keyValue], prev: keyValue }
-        )
-        .notes.map(v => {
-          console.log(v);
-          return music.getCanonicalNoteName(v);
-        });
+      const notes: string[] = music
+        // @ts-ignore
+        .getScaleTones(keyValue, scale.pattern)
+        .map((v: number) => music.getCanonicalNoteName(v));
       return new Music(notes, styles.svg).render();
     }
   };
