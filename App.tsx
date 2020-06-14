@@ -16,15 +16,10 @@ function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
 export default function App() {
   const [scale, setScale] = React.useState<Pattern | null>(null);
   const [root, setRoot] = React.useState<Note | null>(null);
-  const patterns: Pattern[] = rawPatterns.map(({ roots, ...pattern }) => {
-    let notes: Note[] = roots
-      .map(note => Note.fromString(note))
-      .filter(notEmpty);
-    return {
-      roots: notes,
-      ...pattern
-    };
-  });
+  const patterns: Pattern[] = rawPatterns.map(({ roots, ...pattern }) => ({
+    roots: roots.map(note => Note.fromString(note)).filter(notEmpty),
+    ...pattern
+  }));
   const patternPicker = (
     <RNPickerSelect
       placeholder={{
@@ -32,36 +27,31 @@ export default function App() {
         value: null
       }}
       onValueChange={(_, i) => setScale(patterns[i - 1])}
-      items={rawPatterns.map((p: RawPattern) => {
-        return {
-          label: p.name,
-          value: p.name
-        };
-      })}
+      items={rawPatterns.map((p: RawPattern) => ({
+        label: p.name,
+        value: p.name
+      }))}
     />
   );
 
-  const rootPicker =
-    scale && scale.roots ? (
-      <RNPickerSelect
-        placeholder={{
-          label: "Select a scale root...",
-          value: null
-        }}
-        onValueChange={v => setRoot(new Note(v))}
-        items={scale.roots
-          .map((note: Note) => {
-            const noteString = note.string();
-            return notEmpty(noteString)
-              ? {
-                  label: noteString,
-                  value: note.getIndex()
-                }
-              : null;
-          })
-          .filter(notEmpty)}
-      />
-    ) : null;
+  const rootPicker = () => {
+    if (scale && scale.roots) {
+      const items = scale.roots
+        .map(n => n.string())
+        .map((label, i) => (label ? { label: label, value: i } : null))
+        .filter(notEmpty);
+      return (
+        <RNPickerSelect
+          placeholder={{
+            label: "Select a scale root...",
+            value: null
+          }}
+          onValueChange={v => setRoot(new Note(v))}
+          items={items}
+        />
+      );
+    }
+  };
   const sheetmusic = () => {
     if (scale && root) {
       const music = new Vex.Flow.Music();
@@ -73,12 +63,11 @@ export default function App() {
       return new Music(notes, styles.svg).render();
     }
   };
-  let message = sheetmusic();
   return (
     <View style={styles.container}>
       {patternPicker}
-      {rootPicker}
-      {message}
+      {rootPicker()}
+      {sheetmusic()}
     </View>
   );
 }
