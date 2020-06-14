@@ -8,7 +8,9 @@ import * as O from "fp-ts/lib/Option";
 import { Option } from "fp-ts/lib/Option";
 import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
+import { Do } from "fp-ts-contrib/lib/Do";
 import { pipeable } from "fp-ts/lib/pipeable";
+import unicode = Vex.Flow.unicode;
 
 type Pattern = { name: string; pattern: number[]; roots: Note[] };
 type Scale = { pattern: number[]; roots: Map<string, Note> };
@@ -62,22 +64,12 @@ export default function App() {
     ({ name, pattern, roots }): Option<[string, Scale]> => {
       let pairs: Option<[string, Note]>[] = roots.map(
         (root: string): Option<[string, Note]> =>
-          O.flatten(
-            pipe(
-              O.fromNullable(Note.fromString(root)),
-              O.mapNullable(note =>
-                pipe(
-                  O.fromNullable(note.unicodeString()),
-                  O.mapNullable(
-                    (unicodeString: string): [string, Note] => [
-                      unicodeString,
-                      note
-                    ]
-                  )
-                )
-              )
+          Do(O.option)
+            .bindL("note", () => O.fromNullable(Note.fromString(root)))
+            .bindL("unicodeString", ({ note }) =>
+              O.fromNullable(note.unicodeString())
             )
-          )
+            .return(({ note, unicodeString }) => [unicodeString, note])
       );
       return pipe(
         sequence(pairs),

@@ -12,6 +12,7 @@
     "expo": "~37.0.3",
     "expo-updates": "~0.2.0",
     "fp-ts": "^2.6.5",
+    "fp-ts-contrib": "^0.1.16",
     "react": "~16.9.0",
     "react-dom": "~16.9.0",
     "react-native": "~0.61.5",
