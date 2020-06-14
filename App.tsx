@@ -21,17 +21,19 @@ export default function App() {
     ...pattern
   }));
   const patternPicker = (
-    <RNPickerSelect
-      placeholder={{
-        label: "Select a scale type...",
-        value: null
-      }}
-      onValueChange={(_, i) => setScale(patterns[i - 1])}
-      items={rawPatterns.map((p: RawPattern) => ({
-        label: p.name,
-        value: p.name
-      }))}
-    />
+    <View style={styles.picker}>
+      <RNPickerSelect
+        placeholder={{
+          label: "Select a scale type...",
+          value: null
+        }}
+        onValueChange={(_, i) => setScale(patterns[i - 1])}
+        items={rawPatterns.map((p: RawPattern) => ({
+          label: p.name,
+          value: p.name
+        }))}
+      />
+    </View>
   );
   const rootPicker = () => {
     if (scale && scale.roots) {
@@ -40,14 +42,16 @@ export default function App() {
         .map((label, i) => (label ? { label: label, value: i } : null))
         .filter(notEmpty);
       return (
-        <RNPickerSelect
-          placeholder={{
-            label: "Select a scale root...",
-            value: null
-          }}
-          onValueChange={i => setRoot(scale.roots[i])}
-          items={items}
-        />
+        <View style={styles.picker}>
+          <RNPickerSelect
+            placeholder={{
+              label: "Select a scale root...",
+              value: null
+            }}
+            onValueChange={i => setRoot(scale.roots[i])}
+            items={items}
+          />
+        </View>
       );
     }
   };
@@ -89,15 +93,6 @@ const styles = StyleSheet.create({
     height: 150,
     width: 150
   },
-  buttonStyle: {
-    alignSelf: "center"
-  },
-  buttons: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  error: { flex: 1, justifyContent: "center", alignItems: "center" },
   svg: {
     height: 400,
     width: 400,
