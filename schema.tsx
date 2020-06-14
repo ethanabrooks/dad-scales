@@ -1,5 +1,6 @@
 import Vex from "vexflow";
-import { Map, Seq } from "immutable";
+import { List, Map, Seq } from "immutable";
+import { notes } from "./notes";
 
 const Ajv = require("ajv");
 export const ajv = new Ajv({ allErrors: true });
@@ -25,21 +26,19 @@ export const schema = {
   }
 };
 
-const noteValues: Seq.Indexed<string> = Map(Vex.Flow.Music.noteValues).keySeq();
+const noteValues: List<string> = List(notes).flatMap(({ sharp, flat }) => [
+  sharp,
+  flat
+]);
 ajv.addKeyword("isNoteValue", {
   type: "string",
-  validate: (schema: boolean, data: unknown) =>
-    schema && typeof data === "string" && noteValues.includes(data),
-  errors: true
-});
-ajv.addKeyword("matches", {
-  type: "string",
-  validate: function(schema: unknown, data: unknown) {
-    return (
-      typeof schema === "string" &&
-      typeof data === "string" &&
-      data.match(schema)
-    );
+  validate: (schema: boolean, data: unknown) => {
+    if (schema && typeof data === "string") {
+      const match = data.match(/([a-z])\(?([b#])\)?/);
+      return match && noteValues.contains(match.slice(1, 3).join(""));
+    } else {
+      return false;
+    }
   },
   errors: true
 });

@@ -9,8 +9,8 @@ type Note = string;
 type Pattern = { name: string; pattern: number[]; roots: Note[] };
 
 export default function App() {
-  const [scale, setScale] = React.useState<Pattern | null>(null);
-  const [root, setRoot] = React.useState<Note | null>(null);
+  const [scale, setScale] = React.useState<Pattern | null>(patterns[0]);
+  const [root, setRoot] = React.useState<Note | null>("b");
   const patternPicker = (
     <RNPickerSelect
       placeholder={{
