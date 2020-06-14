@@ -3,8 +3,15 @@ import { Picker, StyleSheet, View } from "react-native";
 import rawPatterns from "./patterns.json";
 import { Music } from "./music";
 import { Note, NUM_TONES } from "./note";
+import { Map } from "immutable";
+import * as O from "fp-ts/lib/Option";
+import { Option } from "fp-ts/lib/Option";
+import * as A from "fp-ts/lib/Array";
+import { pipe } from "fp-ts/lib/function";
+import { pipeable } from "fp-ts/lib/pipeable";
 
 type Pattern = { name: string; pattern: number[]; roots: Note[] };
+type Scale = { pattern: number[]; roots: Map<string, Note> };
 
 function notEmpty<T>(value: T | null | undefined): value is T {
   return value !== null && value !== undefined;
@@ -17,6 +24,75 @@ export default function App() {
     roots: roots.map(note => Note.fromString(note)).filter(notEmpty),
     ...pattern
   }));
+  const dumbGetPatternMap = () => {
+    let list: (null | [string, Scale])[] = rawPatterns.map(
+      ({ name, pattern, roots }) => {
+        let notes = roots.map(root => Note.fromString(root));
+        if (notes.includes(undefined)) {
+          return null;
+        } else {
+          let pairs = notes.filter(notEmpty).map(
+            (note: Note): [string, Note] | null => {
+              const noteString = note.unicodeString();
+              return noteString ? [noteString, note] : null;
+            }
+          );
+          if (pairs.includes(null)) {
+            return null;
+          } else {
+            let roots = Map(pairs.filter(notEmpty));
+            let newVar: [
+              string,
+              { pattern: number[]; roots: Map<string, Note> }
+            ] = [name, { pattern, roots }];
+            return newVar;
+          }
+        }
+      }
+    );
+    if (list.includes(null)) {
+      return null;
+    } else {
+      return Map(list.filter(notEmpty));
+    }
+  };
+
+  let sequence = A.array.sequence(O.option);
+  let pairs: Option<[string, Scale]>[] = rawPatterns.map(
+    ({ name, pattern, roots }): Option<[string, Scale]> => {
+      let pairs: Option<[string, Note]>[] = roots.map(
+        (root: string): Option<[string, Note]> =>
+          O.flatten(
+            pipe(
+              O.fromNullable(Note.fromString(root)),
+              O.mapNullable(note =>
+                pipe(
+                  O.fromNullable(note.unicodeString()),
+                  O.mapNullable(
+                    (unicodeString: string): [string, Note] => [
+                      unicodeString,
+                      note
+                    ]
+                  )
+                )
+              )
+            )
+          )
+      );
+      return pipe(
+        sequence(pairs),
+        O.mapNullable((pairs: [string, Note][]) => [
+          name,
+          { pattern, roots: Map(pairs) }
+        ])
+      );
+    }
+  );
+  const getPatternMap = pipe(
+    sequence(pairs),
+    O.mapNullable((pairs: [string, Scale][]) => Map(pairs))
+  );
+
   const patternPicker = (
     <Picker
       style={styles.picker}
