@@ -1,15 +1,12 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import RNPickerSelect from "react-native-picker-select";
+import { Picker, StyleSheet, View } from "react-native";
 import rawPatterns from "./patterns.json";
 import { Music } from "./music";
-import Vex from "vexflow";
 import { Note, NUM_TONES } from "./note";
 
-type RawPattern = { name: string; pattern: number[]; roots: string[] };
 type Pattern = { name: string; pattern: number[]; roots: Note[] };
 
-function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
+function notEmpty<T>(value: T | null | undefined): value is T {
   return value !== null && value !== undefined;
 }
 
@@ -22,54 +19,41 @@ export default function App() {
   }));
   const patternPicker = (
     <View style={styles.picker}>
-      <RNPickerSelect
-        placeholder={{
-          label: "Select a scale type...",
-          value: null
-        }}
-        onValueChange={(_, i) => setScale(patterns[i - 1])}
-        items={rawPatterns.map((p: RawPattern) => ({
-          label: p.name,
-          value: p.name
-        }))}
-        style={{ ...styles }}
-      />
+      <Picker onValueChange={(_, i) => setScale(patterns[i - 1])}>
+        {patterns.map((p: Pattern, i: number) => (
+          <Picker.Item label={p.name} value={i} key={i} />
+        ))}
+      </Picker>
     </View>
   );
   const rootPicker = () => {
     if (scale && scale.roots) {
-      const items = scale.roots
-        .map(n => n.unicodeString())
-        .map((label, i) => (label ? { label: label, value: i } : null))
-        .filter(notEmpty);
       return (
         <View style={styles.picker}>
-          <RNPickerSelect
-            placeholder={{
-              label: "Select a scale root...",
-              value: null
-            }}
-            onValueChange={i => setRoot(scale.roots[i])}
-            items={items}
-            style={{ ...styles }}
-          />
+          <Picker onValueChange={i => setRoot(scale.roots[i])}>
+            {scale.roots
+              .map(n => n.unicodeString())
+              .map((label, i) =>
+                label ? <Picker.Item label={label} value={i} key={i} /> : null
+              )
+              .filter(notEmpty)}
+          </Picker>
         </View>
       );
     }
   };
   const sheetmusic = () => {
     if (scale && root) {
-      const keyValue: number = root.getIndex();
-      const noteIndices = scale.pattern.reduce(
-        ({ acc, prev }, curr) => {
-          let sum: number = prev + curr;
-          return { acc: acc.concat(sum % NUM_TONES), prev: sum };
-        },
-        { acc: [keyValue], prev: keyValue }
-      ).acc;
-      const notes: Note[] = noteIndices.map(
-        (v: number) => new Note(v, root.sharp)
-      );
+      const cumSum = (
+        { acc, prev }: { acc: number[]; prev: number },
+        curr: number
+      ) => {
+        const sum: number = prev + curr;
+        return { acc: acc.concat(sum % NUM_TONES), prev: sum };
+      };
+      const notes: Note[] = scale.pattern
+        .reduce(cumSum, { acc: [root.getIndex()], prev: root.getIndex() })
+        .acc.map(v => new Note(v, root.sharp));
       return new Music(notes, styles.svg).render();
     }
   };
@@ -114,22 +98,5 @@ const styles = StyleSheet.create({
   svg: {
     position: "absolute",
     width: "100%"
-  },
-  placeholder: {
-    fontSize: 26,
-    color: "black"
-  },
-  inputIOS: {
-    fontSize: 26,
-    textAlign: "center",
-    width: "100%",
-    paddingTop: 13,
-    paddingHorizontal: 10,
-    paddingBottom: 10,
-    borderRadius: 0,
-    borderWidth: 1,
-    borderColor: "white",
-    backgroundColor: "#f8f8ff",
-    color: "#696969"
   }
 });

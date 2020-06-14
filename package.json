@@ -8,11 +8,9 @@
     "test": "jest"
   },
   "dependencies": {
-    "@react-native-community/picker": "^1.6.3",
     "ajv": "^6.12.2",
     "expo": "~37.0.3",
     "expo-updates": "~0.2.0",
-    "papaparse": "^5.2.0",
     "react": "~16.9.0",
     "react-dom": "~16.9.0",
     "react-native": "~0.61.5",
@@ -34,7 +32,6 @@
     "@types/vexflow": "^1.2.36",
     "babel-preset-expo": "~8.1.0",
     "immutable": "^4.0.0-rc.12",
-    "immutables": "^0.0.0",
     "jest-expo": "~37.0.0",
     "standalone-vexflow-context": "^0.1.1",
     "typescript": "~3.8.3"
