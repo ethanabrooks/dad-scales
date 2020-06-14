@@ -11,30 +11,30 @@ function notEmpty<T>(value: T | null | undefined): value is T {
 }
 
 export default function App() {
-  const [scale, setScale] = React.useState<Pattern | null>(null);
-  const [root, setRoot] = React.useState<Note | null>(null);
+  const [scaleIndex, setScaleIndex] = React.useState<number>(0);
+  const [rootIndex, setRootIndex] = React.useState<number | null>(null);
   const patterns: Pattern[] = rawPatterns.map(({ roots, ...pattern }) => ({
     roots: roots.map(note => Note.fromString(note)).filter(notEmpty),
     ...pattern
   }));
-  console.log("scale", scale);
   const patternPicker = (
     <Picker
       style={styles.picker}
-      onValueChange={(_, i) => setScale(patterns[i - 1])}
-      selectedValue={scale ? scale.name : "Select scale"}
+      selectedValue={scaleIndex}
+      onValueChange={v => setScaleIndex(v)}
     >
       {patterns.map((p: Pattern, i: number) => (
-        <Picker.Item label={p.name} value={p.name} key={p.name} />
+        <Picker.Item label={p.name} value={i} key={i} />
       ))}
     </Picker>
   );
+  const scale = patterns[scaleIndex];
   const rootPicker = () => {
     return scale && scale.roots ? (
       <Picker
-        onValueChange={i => setRoot(scale.roots[i])}
-        selectedValue={root}
         style={styles.picker}
+        selectedValue={rootIndex}
+        onValueChange={i => setRootIndex(i)}
       >
         {scale.roots
           .map(n => n.unicodeString())
@@ -48,7 +48,8 @@ export default function App() {
     );
   };
   const sheetmusic = () => {
-    if (scale && root) {
+    if (rootIndex !== null) {
+      const root = scale.roots[rootIndex];
       const cumSum = (
         { acc, prev }: { acc: number[]; prev: number },
         curr: number
@@ -76,7 +77,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "space-between",
+    paddingTop: 40,
     alignItems: "center"
   },
   picker: {
