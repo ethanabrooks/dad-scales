@@ -1,6 +1,6 @@
 import Vex from "vexflow";
 import { List, Map, Seq } from "immutable";
-import { notes } from "./notes";
+import { tones } from "./note";
 
 const Ajv = require("ajv");
 export const ajv = new Ajv({ allErrors: true });
@@ -26,7 +26,7 @@ export const schema = {
   }
 };
 
-const noteValues: List<string> = List(notes).flatMap(({ sharp, flat }) => [
+const noteValues: List<string> = List(tones).flatMap(({ sharp, flat }) => [
   sharp,
   flat
 ]);

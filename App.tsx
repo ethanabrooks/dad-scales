@@ -1,16 +1,30 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import RNPickerSelect from "react-native-picker-select";
-import patterns from "./patterns.json";
+import rawPatterns from "./patterns.json";
 import { Music } from "./music";
 import Vex from "vexflow";
+import { Note } from "./note";
 
-type Note = string;
+type RawPattern = { name: string; pattern: number[]; roots: string[] };
 type Pattern = { name: string; pattern: number[]; roots: Note[] };
 
+function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
+  return value !== null && value !== undefined;
+}
+
 export default function App() {
-  const [scale, setScale] = React.useState<Pattern | null>(patterns[0]);
-  const [root, setRoot] = React.useState<Note | null>("b");
+  const [scale, setScale] = React.useState<Pattern | null>(null);
+  const [root, setRoot] = React.useState<Note | null>(null);
+  const patterns: Pattern[] = rawPatterns.map(({ roots, ...pattern }) => {
+    let notes: Note[] = roots
+      .map(note => Note.fromString(note))
+      .filter(notEmpty);
+    return {
+      roots: notes,
+      ...pattern
+    };
+  });
   const patternPicker = (
     <RNPickerSelect
       placeholder={{
@@ -18,7 +32,7 @@ export default function App() {
         value: null
       }}
       onValueChange={(_, i) => setScale(patterns[i - 1])}
-      items={patterns.map((p: Pattern) => {
+      items={rawPatterns.map((p: RawPattern) => {
         return {
           label: p.name,
           value: p.name
@@ -26,6 +40,7 @@ export default function App() {
       })}
     />
   );
+
   const rootPicker =
     scale && scale.roots ? (
       <RNPickerSelect
@@ -33,14 +48,24 @@ export default function App() {
           label: "Select a scale root...",
           value: null
         }}
-        onValueChange={setRoot}
-        items={scale.roots.map(note => ({ label: note, value: note }))}
+        onValueChange={v => setRoot(new Note(v))}
+        items={scale.roots
+          .map((note: Note) => {
+            const noteString = note.string();
+            return notEmpty(noteString)
+              ? {
+                  label: noteString,
+                  value: note.getIndex()
+                }
+              : null;
+          })
+          .filter(notEmpty)}
       />
     ) : null;
   const sheetmusic = () => {
     if (scale && root) {
       const music = new Vex.Flow.Music();
-      let keyValue: number = music.getNoteValue(root);
+      const keyValue: number = root.getIndex();
       const notes: string[] = music
         // @ts-ignore
         .getScaleTones(keyValue, scale.pattern)
