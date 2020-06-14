@@ -65,38 +65,52 @@ export default function App() {
         },
         { acc: [keyValue], prev: keyValue }
       ).acc;
-      console.log(noteIndices);
       const notes: Note[] = noteIndices.map(
         (v: number) => new Note(v, root.sharp)
       );
-      console.log(notes);
-      console.log(notes.map(n => n.asciiString()));
       return new Music(notes, styles.svg).render();
     }
   };
+  const Square = () => {
+    const sqStyle = {
+      width: 50,
+      height: 50,
+      backgroundColor: "black"
+    };
+    return <View style={sqStyle} />;
+  };
   return (
     <View style={styles.container}>
-      {patternPicker}
-      {rootPicker()}
-      {sheetmusic()}
+      <View style={styles.pickers}>
+        {patternPicker}
+        {rootPicker()}
+      </View>
+      <View style={styles.music}>{sheetmusic()}</View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "space-around"
+    position: "relative",
+    top: "30%",
+    alignItems: "center"
   },
   picker: {
-    height: 150,
-    width: 150
+    height: 100
+  },
+  pickers: {
+    flex: 1,
+    height: 200,
+    justifyContent: "space-around"
+  },
+  music: {
+    position: "relative",
+    top: "50%",
+    width: "95%"
   },
   svg: {
-    height: 400,
-    width: 400,
-    justifyContent: "center",
-    alignItems: "center"
+    position: "absolute",
+    width: "100%"
   }
 });
