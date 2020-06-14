@@ -3,6 +3,7 @@ import Vex from "vexflow";
 import {
   NotoFontPack,
   ReactNativeSVGContext
+  // @ts-ignore
 } from "standalone-vexflow-context";
 import { Note } from "./note";
 
@@ -15,7 +16,7 @@ export class Music {
     const length = notes.length;
     const numNotes = Range(0, Infinity)
       .map(n => Math.pow(2, n))
-      .filter(n => n > length)
+      .filter(n => n >= length)
       .first(null);
     if (!numNotes) {
       throw Error("Mis-computed numNotes.");

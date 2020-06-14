@@ -1,7 +1,10 @@
 import { Map } from "immutable";
 import Vex from "vexflow";
 
-export const tones = [
+type Accidental = "#" | "b" | null;
+type Tone = { base: string; accidental: Accidental };
+
+const toneStrings = [
   { sharp: "c", flat: "c" },
   { sharp: "c#", flat: "db" },
   { sharp: "d", flat: "d" },
@@ -16,20 +19,35 @@ export const tones = [
   { sharp: "b", flat: "b" }
 ];
 
-type Entry = [string, Note];
-type Accidental = "sharp" | "flat" | null;
+export const NUM_TONES = toneStrings.length;
+
+const tones: { sharp: Tone; flat: Tone }[] = toneStrings.map(
+  ({ sharp, flat }) => {
+    const parse = (s: string): Tone => {
+      switch (s[1]) {
+        case "#":
+          return { base: s[0], accidental: "#" };
+        case "b":
+          return { base: s[0], accidental: "b" };
+        default:
+          return { base: s[0], accidental: null };
+      }
+    };
+    return { sharp: parse(sharp), flat: parse(flat) };
+  }
+);
 
 export class Note {
   index: number;
-  accidental: Accidental;
+  sharp: boolean;
 
-  constructor(index: number, accidental: Accidental) {
+  constructor(index: number, sharp: boolean) {
     this.index = index;
-    this.accidental = accidental;
+    this.sharp = sharp;
   }
 
   static fromString(s: string): undefined | Note {
-    return toneIndexes.get(s.replace("(", "").replace(")", ""));
+    return toneIndexes.get(s);
   }
 
   getIndex() {
@@ -37,14 +55,17 @@ export class Note {
   }
 
   getAccidental() {
-    return this.accidental;
+    let tone: { sharp: Tone; flat: Tone } = tones[this.index];
+    if (tone) {
+      return (this.sharp ? tone.sharp : tone.flat).accidental;
+    }
   }
 
   vexFlowAccidental() {
-    switch (this.accidental) {
-      case "sharp":
+    switch (this.getAccidental()) {
+      case "#":
         return new Vex.Flow.Accidental("#");
-      case "flat":
+      case "b":
         return new Vex.Flow.Accidental("b");
       default:
         return null;
@@ -52,9 +73,9 @@ export class Note {
   }
 
   asciiString() {
-    let tone = tones[this.index];
+    let tone = toneStrings[this.index];
     if (tone) {
-      return this.accidental == "flat" ? tone.flat : tone.sharp;
+      return this.sharp ? tone.sharp : tone.flat;
     }
   }
 
@@ -65,11 +86,14 @@ export class Note {
       : null;
   }
 }
-
 const toneIndexes: Map<String, Note> = Map(
-  tones.flatMap(({ sharp, flat }, i) => {
-    let e1: Entry = [sharp, new Note(i, "sharp")];
-    let e2: Entry = [flat, new Note(i, "flat")];
-    return [e1, e2];
+  toneStrings.flatMap(({ sharp, flat }, i) => {
+    let e: [[string, Note]] = [[sharp, new Note(i, true)]];
+    if (flat !== sharp) e.push([flat, new Note(i, false)]);
+    if (!sharp.match(/[a-z]\(?#\)?/))
+      e.push([`${sharp}(#)`, new Note(i, true)]);
+    if (!sharp.match(/[a-z]\(?b\)?/))
+      e.push([`${flat}(b)`, new Note(i, false)]);
+    return e;
   })
 );

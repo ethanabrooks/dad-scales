@@ -1,6 +1,6 @@
 import Vex from "vexflow";
 import { List, Map, Seq } from "immutable";
-import { tones } from "./note";
+import { toneStrings } from "./note";
 
 const Ajv = require("ajv");
 export const ajv = new Ajv({ allErrors: true });
@@ -26,10 +26,9 @@ export const schema = {
   }
 };
 
-const noteValues: List<string> = List(tones).flatMap(({ sharp, flat }) => [
-  sharp,
-  flat
-]);
+const noteValues: List<string> = List(toneStrings).flatMap(
+  ({ sharp, flat }) => [sharp, flat]
+);
 ajv.addKeyword("isNoteValue", {
   type: "string",
   validate: (schema: boolean, data: unknown) => {
