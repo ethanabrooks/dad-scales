@@ -30,22 +30,22 @@ export default function App() {
     </Picker>
   );
   const rootPicker = () => {
-    if (scale && scale.roots) {
-      return (
-        <Picker
-          onValueChange={i => setRoot(scale.roots[i])}
-          selectedValue={root}
-          style={styles.picker}
-        >
-          {scale.roots
-            .map(n => n.unicodeString())
-            .map((label, i) =>
-              label ? <Picker.Item label={label} value={i} key={i} /> : null
-            )
-            .filter(notEmpty)}
-        </Picker>
-      );
-    }
+    return scale && scale.roots ? (
+      <Picker
+        onValueChange={i => setRoot(scale.roots[i])}
+        selectedValue={root}
+        style={styles.picker}
+      >
+        {scale.roots
+          .map(n => n.unicodeString())
+          .map((label, i) =>
+            label ? <Picker.Item label={label} value={i} key={i} /> : null
+          )
+          .filter(notEmpty)}
+      </Picker>
+    ) : (
+      <View style={styles.picker} />
+    );
   };
   const sheetmusic = () => {
     if (scale && root) {
@@ -62,24 +62,13 @@ export default function App() {
       return new Music(notes, styles.svg).render();
     }
   };
-  const Square = () => {
-    const sqStyle = {
-      width: 50,
-      height: 50,
-      backgroundColor: "black"
-    };
-    return <View style={sqStyle} />;
-  };
-  // {patternPicker}
-  // {rootPicker()}
-  // <View style={styles.music}>{sheetmusic()}</View>
   return (
     <View style={styles.container}>
-      <View style={{ backgroundColor: "gray", ...styles.pickers }}>
-        <View style={{ backgroundColor: "blue", ...styles.picker }} />
-        <View style={{ backgroundColor: "red", ...styles.picker }} />
+      <View style={styles.pickers}>
+        {patternPicker}
+        {rootPicker()}
       </View>
-      <View style={{ backgroundColor: "green", ...styles.music }} />
+      <View style={styles.music}>{sheetmusic()}</View>
     </View>
   );
 }
@@ -91,7 +80,7 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   picker: {
-    height: "20%"
+    height: "50%"
   },
   pickers: {
     justifyContent: "space-evenly",
