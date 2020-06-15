@@ -36,7 +36,7 @@ ajv.addKeyword("isNoteValue", {
   validate: (schema: boolean, data: unknown) => {
     if (schema && typeof data === "string") {
       const match1 = data.match(/([a-z])\(?[b#]?\)?/);
-      const match2 = data.match(/([a-zb#]*)/);
+      const match2 = data.match(/([a-z][b#]?)/);
       return match1 && match2 && noteValues.includes(match2[0]);
     } else {
       return false;
