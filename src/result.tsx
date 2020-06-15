@@ -14,9 +14,10 @@ import { AVPlaybackSource } from "expo-av/build/AV";
 export type Result<T> = Either<string, T>;
 
 const getSoundThunk: (
-  path: string
-) => Promise<{ sound: Sound; status: AVPlaybackStatus }> = (path: string) =>
-  Audio.Sound.createAsync(require(path), { shouldPlay: true });
+  path: AVPlaybackSource
+) => Promise<{ sound: Sound; status: AVPlaybackStatus }> = (
+  path: AVPlaybackSource
+) => Audio.Sound.createAsync(path, { shouldPlay: true });
 
 export function result<T>(
   f: Lazy<Promise<T>>,
