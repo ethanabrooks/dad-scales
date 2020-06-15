@@ -44,7 +44,6 @@ export default function App() {
             () => {
               let validate = ajv.compile(schema);
               const valid = validate(rawScales);
-              console.error(ajv.errorsText(validate.errors));
               return [valid, ajv.errorsText(validate.errors)];
             },
             e => `${e}`
