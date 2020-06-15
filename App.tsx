@@ -1,6 +1,6 @@
 import React, { ReactPortal } from "react";
 import { Picker, StyleSheet, Text, View } from "react-native";
-import rawScales from "./scale.json";
+import rawScales from "./scales.json";
 import { Note, NUM_TONES } from "./note";
 import { Map, Seq } from "immutable";
 import * as O from "fp-ts/lib/Option";
@@ -16,12 +16,10 @@ import { ajv, schema } from "./schema";
 
 type Scale = { pattern: number[]; roots: Map<string, Note> };
 
-function first<T>(seq: Seq.Indexed<T>, description?: string): Result<T> {
+function first<T>(seq: Seq.Indexed<T>): Result<T> {
   return pipe(
     O.fromNullable(seq.first(null)),
-    MakeResult.fromOption(
-      "Sequence was empty" + (description ? `: ${description}` : "")
-    )
+    MakeResult.fromOption("Sequence was empty")
   );
 }
 
@@ -41,18 +39,19 @@ export default function App() {
     () =>
       Do(E.either)
         .bind(
-          "errorsText",
+          "validationResult",
           E.tryCatch(
             () => {
               let validate = ajv.compile(schema);
               const valid = validate(rawScales);
               console.error(ajv.errorsText(validate.errors));
-              return valid
-                ? E.right(null)
-                : E.left(ajv.errorsText(validate.errors));
+              return [valid, ajv.errorsText(validate.errors)];
             },
-            e => `validate threw an error.`
+            e => `${e}`
           )
+        )
+        .bindL("guard", ({ validationResult: [valid, error] }) =>
+          valid ? E.right(null) : E.left(error)
         )
         .let(
           "scalePairs",
@@ -79,7 +78,12 @@ export default function App() {
 
   const scalePicker: Result<JSX.Element> = Do(E.either)
     .bind("scaleMap", scaleMap)
-    .bindL("firstScale", ({ scaleMap }) => first(scaleMap.keySeq()))
+    .bindL("firstScale", ({ scaleMap }) =>
+      pipe(
+        first(scaleMap.keySeq()),
+        E.mapLeft(e => e + ": scale names")
+      )
+    )
     .return(
       ({
         scaleMap,
@@ -110,12 +114,15 @@ export default function App() {
     scale,
     O.fold(
       () => E.right(<View style={styles.picker} />),
-      (scaleKey: string) => {
-        return Do(E.either)
+      (scaleKey: string) =>
+        Do(E.either)
           .bind("scaleMap", scaleMap)
           .bindL("scaleValue", ({ scaleMap }) => R.lookup(scaleKey, scaleMap))
           .bindL("firstRoot", ({ scaleValue }) =>
-            first(scaleValue.roots.keySeq(), `"${scaleKey}" roots`)
+            pipe(
+              first(scaleValue.roots.keySeq()),
+              E.mapLeft(e => e + `: "${scaleKey}" roots`)
+            )
           )
           .return(({ firstRoot, scaleValue }) => (
             <Picker
@@ -133,8 +140,7 @@ export default function App() {
                   <Picker.Item label={r} value={r} key={r} />
                 ))}
             </Picker>
-          ));
-      }
+          ))
     )
   );
   const sheetMusic: Result<ReactPortal | null> = pipe(
@@ -165,9 +171,9 @@ export default function App() {
               .reduce(modCumSum, { acc: [rootIndex], prev: rootIndex })
               .acc.map(v => new Note(v, rootValue.sharp))
           )
-          .bindL("reactPortal", ({ notes }) => {
-            return Music.getContext(notes, styles.svg);
-          })
+          .bindL("reactPortal", ({ notes }) =>
+            Music.getContext(notes, styles.svg)
+          )
           .return(({ reactPortal }) => reactPortal)
     )
   );
