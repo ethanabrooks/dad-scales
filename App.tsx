@@ -67,7 +67,10 @@ export default function App() {
       }) => (
         <Picker
           style={styles.picker}
-          selectedValue={firstScale}
+          selectedValue={pipe(
+            scale,
+            O.getOrElse(() => firstScale)
+          )}
           onValueChange={s => setScale(some(s))}
         >
           {scaleMap
@@ -94,7 +97,10 @@ export default function App() {
           .return(({ firstRoot, scaleValue }) => (
             <Picker
               style={styles.picker}
-              selectedValue={firstRoot}
+              selectedValue={pipe(
+                root,
+                O.getOrElse(() => firstRoot)
+              )}
               onValueChange={r => setRoot(some(r))}
             >
               {scaleValue.roots
