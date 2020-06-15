@@ -11,7 +11,7 @@ import { MakeResult, Result } from "./result";
 type Accidental = "#" | "b" | null;
 type Tone = { base: string; accidental: Accidental };
 
-export const toneStrings = [
+export const toneStrings: { sharp: string; flat: string }[] = [
   { sharp: "c", flat: "c" },
   { sharp: "c#", flat: "db" },
   { sharp: "d", flat: "d" },
