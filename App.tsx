@@ -1,6 +1,6 @@
 import React, { ReactPortal } from "react";
 import { Picker, StyleSheet, Text, View } from "react-native";
-import rawPatterns from "./patterns.json";
+import rawScales from "./scale.json";
 import { Note, NUM_TONES } from "./note";
 import { Map, Seq } from "immutable";
 import * as O from "fp-ts/lib/Option";
@@ -34,7 +34,7 @@ export default function App() {
   const [scale, setScale] = React.useState<Option<string>>(O.none);
   const [root, setRoot] = React.useState<Option<string>>(O.none);
   let sequence = A.array.sequence(E.either);
-  let scalePairs: Result<[string, Scale]>[] = rawPatterns.map(
+  let scalePairs: Result<[string, Scale]>[] = rawScales.map(
     ({ name, pattern, roots }): Result<[string, Scale]> => {
       let pairs: Result<[string, Note]>[] = roots.map(
         (root: string): Result<[string, Note]> => {
