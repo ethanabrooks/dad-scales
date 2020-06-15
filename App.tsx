@@ -16,10 +16,12 @@ import { ajv, schema } from "./schema";
 
 type Scale = { pattern: number[]; roots: Map<string, Note> };
 
-function first<T>(seq: Seq.Indexed<T>): Result<T> {
+function first<T>(seq: Seq.Indexed<T>, description?: string): Result<T> {
   return pipe(
     O.fromNullable(seq.first(null)),
-    MakeResult.fromOption("Sequence was empty.")
+    MakeResult.fromOption(
+      "Sequence was empty" + (description ? `: ${description}` : "")
+    )
   );
 }
 
@@ -108,12 +110,12 @@ export default function App() {
     scale,
     O.fold(
       () => E.right(<View style={styles.picker} />),
-      (scaleKey: string) =>
-        Do(E.either)
+      (scaleKey: string) => {
+        return Do(E.either)
           .bind("scaleMap", scaleMap)
           .bindL("scaleValue", ({ scaleMap }) => R.lookup(scaleKey, scaleMap))
           .bindL("firstRoot", ({ scaleValue }) =>
-            first(scaleValue.roots.keySeq())
+            first(scaleValue.roots.keySeq(), `"${scaleKey}" roots`)
           )
           .return(({ firstRoot, scaleValue }) => (
             <Picker
@@ -131,7 +133,8 @@ export default function App() {
                   <Picker.Item label={r} value={r} key={r} />
                 ))}
             </Picker>
-          ))
+          ));
+      }
     )
   );
   const sheetMusic: Result<ReactPortal | null> = pipe(
