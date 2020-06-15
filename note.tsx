@@ -97,7 +97,10 @@ export class Note {
     return pipe(
       O.fromNullable(toneStrings[this.index]),
       MakeResult.withRangeError(this.index, toneStrings),
-      E.map(tone => (this.sharp ? tone.sharp : tone.flat))
+      E.map(tone => {
+        console.log(tone);
+        return this.sharp ? tone.sharp : tone.flat;
+      })
     );
   }
 

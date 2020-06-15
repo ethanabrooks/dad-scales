@@ -10,7 +10,6 @@ import { Do } from "fp-ts-contrib/lib/Do";
 import { MakeResult, Result } from "./result";
 import * as E from "fp-ts/lib/Either";
 import * as O from "fp-ts/lib/Option";
-import { Option } from "fp-ts/lib/Option";
 import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import { ReactPortal } from "react";
@@ -45,25 +44,30 @@ export class Music {
         return i1 < i2 ? o : o + 1;
       })
     );
-    const staveNotes = A.zipWith(notes, octaves, (note, octave) =>
-      E.tryCatch(
-        () => {
-          let staveNote = new Vex.Flow.StaveNote({
+    const staveNotes: Result<Vex.Flow.StaveNote>[] = A.zipWith(
+      notes,
+      octaves,
+      (note, octave) =>
+        Do(E.either)
+          .bind("string", note.asciiString())
+          .bind("numNotes", numNotes)
+          .bindL("staveNote", ({ string, numNotes }) =>
+            E.tryCatch(
+              () =>
+                new Vex.Flow.StaveNote({
+                  clef: "treble",
+                  keys: [`${string}/${octave}`],
+                  duration: `${numNotes}`
+                }),
+              e => `new Vex.Flow.StaveNote({
             clef: "treble",
-            keys: [`${note.asciiString()}/${octave}`],
-            duration: `${numNotes}`
-          });
-          console.log(staveNote);
-          return staveNote;
-        },
-        e => `new Vex.Flow.StaveNote({
-            clef: "treble",
-            keys: [${note.asciiString()}/${octave}],
+            keys: [${string}/${octave}],
             duration: ${numNotes}
           }) threw an error:\n${e}`
-      )
+            )
+          )
+          .return(({ staveNote }) => staveNote)
     );
-    console.log(staveNotes);
 
     return Do(E.either)
       .bind("staveNotes", sequence(staveNotes))
