@@ -24,6 +24,7 @@
     "react-native-svg": "^12.1.0",
     "react-native-unimodules": "~0.9.0",
     "react-native-web": "~0.11.7",
+    "tone": "^13.8.25",
     "vexflow": "^3.0.9"
   },
   "devDependencies": {
