@@ -13,19 +13,32 @@ import * as O from "fp-ts/lib/Option";
 import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import { ReactPortal } from "react";
+export type Clef = "base" | "treble";
 
-let sequence = A.array.sequence(E.either);
 export class Music {
   context: ReactNativeSVGContext;
-  static getContext(notes: Note[], style: unknown): Result<ReactPortal> {
+  static getContext(
+    notes: Note[],
+    clef: Clef,
+    style: unknown
+  ): Result<ReactPortal> {
+    const sequence = A.array.sequence(E.either);
     const numNotes = Range(0, Infinity)
       .map(n => Math.pow(2, n))
       .filter(n => n >= notes.length)
       .first(null);
     const indices = notes.map(n => n.getIndex() % NUM_TONES);
+    const startingOctave = () => {
+      switch (clef) {
+        case "treble":
+          return 4;
+        case "base":
+          return 4;
+      }
+    };
     const octaves = pipe(
       A.zip(indices, indices.slice(1)),
-      A.scanLeft(4, (o, [i1, i2]) => {
+      A.scanLeft(startingOctave(), (o, [i1, i2]) => {
         return i1 < i2 ? o : o + 1;
       })
     );
@@ -47,12 +60,12 @@ export class Music {
             E.tryCatch(
               () =>
                 new Vex.Flow.StaveNote({
-                  clef: "treble",
+                  clef: clef,
                   keys: [`${string}/${octave}`],
                   duration: `${numNotes}`
                 }),
               e => `new Vex.Flow.StaveNote({
-            clef: "treble",
+            clef: ${clef},
             keys: [${string}/${octave}],
             duration: ${numNotes}
           }) threw an error:\n${e}`
@@ -84,7 +97,7 @@ export class Music {
       .bindL("music", ({ scale }) =>
         E.tryCatch(
           () => {
-            return new Music(scale, style);
+            return new Music(scale, clef, style);
           },
           e =>
             `new Music(scale, style) threw an error:\n${e}
@@ -100,12 +113,13 @@ export class Music {
       )
       .return(({ reactPortal }) => reactPortal);
   }
-  constructor(scale: Vex.Flow.StaveNote[], style: unknown) {
+  constructor(scale: Vex.Flow.StaveNote[], clef: Clef, style: unknown) {
     this.context = new ReactNativeSVGContext(NotoFontPack, style);
     const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 300);
     stave.setContext(this.context);
+    console.log(scale);
     // @ts-ignore
-    stave.setClef("treble");
+    stave.setClef(clef);
     // @ts-ignore
     stave.setTimeSignature(`4/4`);
     stave.draw();

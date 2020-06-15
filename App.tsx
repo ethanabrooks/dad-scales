@@ -9,7 +9,7 @@ import * as E from "fp-ts/lib/Either";
 import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import { Do } from "fp-ts-contrib/lib/Do";
-import { Music } from "./music";
+import { Music, Clef } from "./music";
 import * as R from "./result";
 import { MakeResult, Result } from "./result";
 import { ajv, schema } from "./schema";
@@ -30,10 +30,10 @@ function modCumSum(
   const sum: number = prev + curr;
   return { acc: acc.concat(sum % NUM_TONES), prev: sum };
 }
-
 export default function App() {
-  const [scale, setScale] = React.useState<Option<string>>(O.none);
-  const [root, setRoot] = React.useState<Option<string>>(O.none);
+  const [clef, setClef] = React.useState<Clef>("treble");
+  const [scale, setScale] = React.useState<Option<string>>(O.some("major"));
+  const [root, setRoot] = React.useState<Option<string>>(O.some("c"));
   const sequence = A.array.sequence(E.either);
   const scaleMap: Result<Map<string, Scale>> = React.useMemo(
     () =>
@@ -73,6 +73,13 @@ export default function App() {
         .bindL("filtered", ({ scalePairs }) => sequence(scalePairs))
         .return(({ filtered }) => Map(filtered)),
     [rawScales]
+  );
+
+  const clefPicker: JSX.Element = (
+    <Picker style={styles.picker} selectedValue={clef} onValueChange={setClef}>
+      <Picker.Item label={"treble"} value={"treble"} key={"treble"} />
+      <Picker.Item label={"bass"} value={"bass"} key={"bass"} />
+    </Picker>
   );
 
   const scalePicker: Result<JSX.Element> = Do(E.either)
@@ -171,7 +178,7 @@ export default function App() {
               .acc.map(v => new Note(v, rootValue.sharp))
           )
           .bindL("reactPortal", ({ notes }) =>
-            Music.getContext(notes, styles.svg)
+            Music.getContext(notes, clef, styles.svg)
           )
           .return(({ reactPortal }) => reactPortal)
     )
@@ -184,6 +191,7 @@ export default function App() {
       .return(({ scalePicker, rootPicker, sheetMusic }) => (
         <View style={styles.container}>
           <View style={styles.pickers}>
+            {clefPicker}
             {scalePicker}
             {rootPicker}
           </View>
