@@ -12,6 +12,7 @@ import { Do } from "fp-ts-contrib/lib/Do";
 import { Music } from "./music";
 import * as R from "./result";
 import { MakeResult, Result } from "./result";
+import { ajv, schema } from "./schema";
 
 type Scale = { pattern: number[]; roots: Map<string, Note> };
 
@@ -33,25 +34,41 @@ function modCumSum(
 export default function App() {
   const [scale, setScale] = React.useState<Option<string>>(O.none);
   const [root, setRoot] = React.useState<Option<string>>(O.none);
-  let sequence = A.array.sequence(E.either);
-  let scalePairs: Result<[string, Scale]>[] = rawScales.map(
-    ({ name, pattern, roots }): Result<[string, Scale]> => {
-      let pairs: Result<[string, Note]>[] = roots.map(
-        (root: string): Result<[string, Note]> => {
+  const sequence = A.array.sequence(E.either);
+  const scaleMap: Result<Map<string, Scale>> = Do(E.either)
+    .bind(
+      "errorsText",
+      E.tryCatch(
+        () => {
+          let validate = ajv.compile(schema);
+          const valid = validate(rawScales);
+          return valid
+            ? E.right(null)
+            : E.left(ajv.errorsText(validate.errors));
+        },
+        e => `validate threw an error`
+      )
+    )
+    .let(
+      "scalePairs",
+      rawScales.map(
+        ({ name, pattern, roots }): Result<[string, Scale]> => {
+          let pairs: Result<[string, Note]>[] = roots.map(
+            (root: string): Result<[string, Note]> => {
+              return Do(E.either)
+                .bind("note", Note.fromString(root))
+                .bindL("unicodeString", ({ note }) => note.unicodeString())
+                .return(({ note, unicodeString }) => [unicodeString, note]);
+            }
+          );
           return Do(E.either)
-            .bind("note", Note.fromString(root))
-            .bindL("unicodeString", ({ note }) => note.unicodeString())
-            .return(({ note, unicodeString }) => [unicodeString, note]);
+            .bind("pairs", sequence(pairs))
+            .return(({ pairs }) => [name, { pattern, roots: Map(pairs) }]);
         }
-      );
-      return Do(E.either)
-        .bind("pairs", sequence(pairs))
-        .return(({ pairs }) => [name, { pattern, roots: Map(pairs) }]);
-    }
-  );
-  let scaleMap: Result<Map<string, Scale>> = Do(E.either)
-    .bind("pairs", sequence(scalePairs))
-    .return(({ pairs }) => Map(pairs));
+      )
+    )
+    .bindL("filtered", ({ scalePairs }) => sequence(scalePairs))
+    .return(({ filtered }) => Map(filtered));
 
   const scalePicker: Result<JSX.Element> = Do(E.either)
     .bind("scaleMap", scaleMap)
