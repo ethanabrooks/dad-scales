@@ -1,7 +1,7 @@
 import React, { ReactPortal } from "react";
 import { Picker, StyleSheet, Text, View } from "react-native";
 import rawScales from "../scales.json";
-import { Note, NUM_TONES } from "./note";
+import { Note, NUM_TONES, Root } from "./note";
 import { Map, Seq } from "immutable";
 import * as O from "fp-ts/lib/Option";
 import { Option, some } from "fp-ts/lib/Option";
@@ -9,19 +9,12 @@ import * as E from "fp-ts/lib/Either";
 import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import { Do } from "fp-ts-contrib/lib/Do";
-import { Music, Clef } from "./music";
+import { Clef, Music } from "./music";
 import * as R from "./result";
 import { MakeResult, Result } from "./result";
 import { ajv, schema } from "./schema";
 
-type Scale = { pattern: number[]; roots: Map<string, Note> };
-
-function first<T>(seq: Seq.Indexed<T>): Result<T> {
-  return pipe(
-    O.fromNullable(seq.first(null)),
-    MakeResult.fromOption("Sequence was empty")
-  );
-}
+type Scale = { pattern: number[]; roots: Map<string, Root> };
 
 function modCumSum(
   { acc, prev }: { acc: number[]; prev: number },
@@ -30,10 +23,19 @@ function modCumSum(
   const sum: number = prev + curr;
   return { acc: acc.concat(sum % NUM_TONES), prev: sum };
 }
+
+export function first<T>(seq: Seq.Indexed<T>): Result<T> {
+  return pipe(
+    O.fromNullable(seq.first(null)),
+    MakeResult.fromOption("Sequence was empty")
+  );
+}
+
 export default function App() {
   const [clef, setClef] = React.useState<Clef>("treble");
   const [scale, setScale] = React.useState<Option<string>>(O.some("major"));
   const [root, setRoot] = React.useState<Option<string>>(O.some("c"));
+  const [play, setPlay] = React.useState<boolean>(false);
   const sequence = A.array.sequence(E.either);
   const scaleMap: Result<Map<string, Scale>> = React.useMemo(
     () =>
@@ -56,13 +58,15 @@ export default function App() {
           "scalePairs",
           rawScales.map(
             ({ name, pattern, roots }): Result<[string, Scale]> => {
-              let pairs: Result<[string, Note]>[] = roots.map(
-                (root: string): Result<[string, Note]> => {
-                  return Do(E.either)
-                    .bind("note", Note.fromString(root))
+              let pairs: Result<[string, Root]>[] = roots.map(
+                ({ name: rootName, sharp, mp3 }): Result<[string, Root]> =>
+                  Do(E.either)
+                    .bind(
+                      "note",
+                      Root.rootFromString(rootName, sharp, O.fromNullable(mp3))
+                    )
                     .bindL("unicodeString", ({ note }) => note.unicodeString())
-                    .return(({ note, unicodeString }) => [unicodeString, note]);
-                }
+                    .return(({ note, unicodeString }) => [unicodeString, note])
               );
               return Do(E.either)
                 .bind("pairs", sequence(pairs))

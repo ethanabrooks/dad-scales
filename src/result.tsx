@@ -2,27 +2,21 @@ import * as E from "fp-ts/lib/Either";
 import { Either } from "fp-ts/lib/Either";
 import { pipe } from "fp-ts/lib/function";
 import * as O from "fp-ts/lib/Option";
+import * as TE from "fp-ts/lib/TaskEither";
 import { Option } from "fp-ts/lib/Option";
 import { Map } from "immutable";
 import { Lazy } from "fp-ts/lib/function";
+import { Do } from "fp-ts-contrib/lib/Do";
+import { Audio, AVPlaybackStatus } from "expo-av";
+import { Sound } from "expo-av/build/Audio/Sound";
+import { AVPlaybackSource } from "expo-av/build/AV";
 
 export type Result<T> = Either<string, T>;
 
-export function eitherTryCatchAsync<L, R>(
-  f: Lazy<Promise<R>>,
-  onError: (reason: any) => L
-): Lazy<Promise<Either<L, R>>> {
-  return () => {
-    try {
-      return f().then(
-        a => E.right<L, R>(a),
-        reason => E.left<L, R>(onError(reason))
-      );
-    } catch (e) {
-      return Promise.resolve(E.left<L, R>(e));
-    }
-  };
-}
+const getSoundThunk: (
+  path: string
+) => Promise<{ sound: Sound; status: AVPlaybackStatus }> = (path: string) =>
+  Audio.Sound.createAsync(require(path), { shouldPlay: true });
 
 export function result<T>(
   f: Lazy<Promise<T>>,
@@ -30,12 +24,9 @@ export function result<T>(
 ): Lazy<Promise<Result<T>>> {
   return () => {
     try {
-      return f().then(
-        a => E.right<string, T>(a),
-        reason => E.left<string, T>(onError(reason))
-      );
+      return f().then(a => E.right(a), reason => E.left(onError(reason)));
     } catch (e) {
-      return Promise.resolve(E.left<string, T>(e));
+      return Promise.resolve(E.left(`${e}`));
     }
   };
 }

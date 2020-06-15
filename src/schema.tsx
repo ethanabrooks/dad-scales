@@ -1,6 +1,7 @@
 import { toneStrings } from "./note";
 import { Do } from "fp-ts-contrib/lib/Do";
 import * as A from "fp-ts/lib/Array";
+import { boolean } from "fp-ts";
 
 const Ajv = require("ajv");
 export const ajv = new Ajv({ allErrors: true });
@@ -19,7 +20,15 @@ export const schema = {
       roots: {
         type: "array",
         minItems: 1,
-        items: { type: "string", exclusiveMinimum: 0, isNoteValue: true },
+        items: {
+          type: "object",
+          properties: {
+            name: { type: "string", isNoteValue: true },
+            sharp: { type: "boolean" },
+            mp3: { type: "string", nullable: true }
+          },
+          required: ["name", "sharp", "mp3"]
+        },
         required: ["name", "pattern", "roots"]
       }
     }
@@ -28,16 +37,14 @@ export const schema = {
 
 const noteValues: string[] = Do(A.array)
   .bind("a", toneStrings)
-  .bindL("b", ({ a }) => [a.sharp, a.flat])
+  .bindL("b", ({ a: { sharp, flat } }) => [sharp, flat])
   .return(({ b }) => b);
 
 ajv.addKeyword("isNoteValue", {
   type: "string",
   validate: (schema: boolean, data: unknown) => {
     if (schema && typeof data === "string") {
-      const match1 = data.match(/([a-z])\(?[b#]?\)?/);
-      const match2 = data.match(/([a-z][b#]?)/);
-      return match1 && match2 && noteValues.includes(match2[0]);
+      return noteValues.includes(data);
     } else {
       return false;
     }

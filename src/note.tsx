@@ -1,4 +1,4 @@
-import { Map } from "immutable";
+import { List } from "immutable";
 import Vex from "vexflow";
 import { Option } from "fp-ts/es6/Option";
 import * as O from "fp-ts/lib/Option";
@@ -7,6 +7,7 @@ import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";
 import { MakeResult, Result } from "./result";
+import { Do } from "fp-ts-contrib/lib/Do";
 
 type Accidental = "#" | "b" | null;
 type Tone = { base: string; accidental: Accidental };
@@ -25,6 +26,8 @@ export const toneStrings: { sharp: string; flat: string }[] = [
   { sharp: "a#", flat: "bb" },
   { sharp: "b", flat: "b" }
 ];
+
+const ix = Array.from(Array(toneStrings.length).keys());
 
 export const NUM_TONES = toneStrings.length;
 
@@ -55,11 +58,24 @@ export class Note {
     this.sharp = sharp;
   }
 
-  static fromString(s: string): Result<Note> {
-    return pipe(
-      O.fromNullable(toneIndexes.get(s)),
-      MakeResult.fromOption(`Failed to convert ${s} to a Note`)
+  static indexFromString(s: string, sharpVersion: boolean): Result<number> {
+    const searchResult: number = List(toneStrings)
+      .map(({ sharp, flat }) => (sharpVersion ? sharp : flat))
+      .findIndex(s1 => s == s1);
+    const checkResult = E.fromPredicate(
+      (r: number) => r > 0,
+      r =>
+        `Did not find ${
+          sharpVersion ? "sharp" : "flat"
+        } version of ${s} in toneStrings:\n${toneStrings}`
     );
+    return checkResult(searchResult);
+  }
+
+  static noteFromString(s: string, sharpVersion: boolean): Result<Note> {
+    return Do(E.either)
+      .bind("index", Note.indexFromString(s, sharpVersion))
+      .return(({ index }) => new Note(index, sharpVersion));
   }
 
   getIndex(): number {
@@ -110,14 +126,20 @@ export class Note {
     );
   }
 }
-const toneIndexes: Map<String, Note> = Map(
-  toneStrings.flatMap(({ sharp, flat }, i) => {
-    let e: [[string, Note]] = [[sharp, new Note(i, true)]];
-    if (flat !== sharp) e.push([flat, new Note(i, false)]);
-    if (!sharp.match(/[a-z]\(?#\)?/))
-      e.push([`${sharp}(#)`, new Note(i, true)]);
-    if (!sharp.match(/[a-z]\(?b\)?/))
-      e.push([`${flat}(b)`, new Note(i, false)]);
-    return e;
-  })
-);
+export class Root extends Note {
+  mp3: Option<string>;
+  constructor(index: number, sharp: boolean, mp3: Option<string>) {
+    super(index, sharp);
+    this.mp3 = mp3;
+  }
+
+  static rootFromString(
+    s: string,
+    sharpVersion: boolean,
+    mp3: Option<string>
+  ): Result<Root> {
+    return Do(E.either)
+      .bind("index", Note.indexFromString(s, sharpVersion))
+      .return(({ index }) => new Root(index, sharpVersion, mp3));
+  }
+}
