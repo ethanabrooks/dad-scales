@@ -66,7 +66,13 @@ declare module "standalone-vexflow-context" {
 }
 declare module "tone" {
   export class Sampler {
-    constructor(dir: string, file: string);
+    constructor(dir: string, file: file);
+    toMaster(): Sampler;
+    triggerAttack(
+      notes: string,
+      time?: Time,
+      velocity: NormalRange = 1
+    ): Sampler;
   }
 }
 
