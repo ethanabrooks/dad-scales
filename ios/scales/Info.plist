@@ -78,5 +78,7 @@
 	<string>Give scales periences permission to access your photos</string>
 	<key>NSRemindersUsageDescription</key>
 	<string>Allow scales to access your reminders</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Allow $(PRODUCT_NAME) to access your microphone</string>
 </dict>
 </plist>

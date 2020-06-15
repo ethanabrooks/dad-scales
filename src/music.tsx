@@ -14,6 +14,7 @@ import { pipe } from "fp-ts/lib/function";
 import { ReactPortal } from "react";
 import { StyleSheet } from "react-native";
 import Svg from "react-native-svg";
+
 export type Clef = "base" | "treble";
 
 export class Music {
@@ -122,7 +123,6 @@ export class Music {
     this.context = new ReactNativeSVGContext(NotoFontPack, style);
     const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 300);
     stave.setContext(this.context);
-    console.log(scale);
     stave.setClef(clef);
     stave.setTimeSignature(`4/4`);
     stave.draw();
