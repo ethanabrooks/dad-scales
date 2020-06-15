@@ -13,6 +13,7 @@ import * as O from "fp-ts/lib/Option";
 import { Option } from "fp-ts/lib/Option";
 import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
+import { ReactPortal } from "react";
 
 function cumSum(numbers: number[]) {
   pipe(
@@ -24,10 +25,10 @@ function cumSum(numbers: number[]) {
 let sequence = A.array.sequence(E.either);
 export class Music {
   context: ReactNativeSVGContext;
-  render() {
-    return this.context.render();
+  render(): ReactPortal {
+    return this.context.render() as ReactPortal;
   }
-  static build(notes: Note[], style: unknown): Result<ReactNativeSVGContext> {
+  static getContext(notes: Note[], style: unknown): Result<ReactPortal> {
     const numNotes = pipe(
       Range(0, Infinity)
         .map(n => Math.pow(2, n))
@@ -46,12 +47,15 @@ export class Music {
     );
     const staveNotes = A.zipWith(notes, octaves, (note, octave) =>
       E.tryCatch(
-        () =>
-          new Vex.Flow.StaveNote({
+        () => {
+          let staveNote = new Vex.Flow.StaveNote({
             clef: "treble",
             keys: [`${note.asciiString()}/${octave}`],
             duration: `${numNotes}`
-          }),
+          });
+          console.log(staveNote);
+          return staveNote;
+        },
         e => `new Vex.Flow.StaveNote({
             clef: "treble",
             keys: [${note.asciiString()}/${octave}],
@@ -59,6 +63,8 @@ export class Music {
           }) threw an error:\n${e}`
       )
     );
+    console.log(staveNotes);
+
     return Do(E.either)
       .bind("staveNotes", sequence(staveNotes))
       .bind("accidentals", sequence(notes.map(n => n.vexFlowAccidental())))
@@ -80,19 +86,22 @@ export class Music {
       .bindL("scale", ({ withAccidentals }) => sequence(withAccidentals))
       .bindL("music", ({ scale }) =>
         E.tryCatch(
-          () => new Music(scale, style),
+          () => {
+            return new Music(scale, style);
+          },
           e =>
             `new Music(scale, style) threw an error:\n${e}
               \nscale:${scale}
               \nstyle:${style}`
         )
       )
-      .return(({ music }) =>
+      .bindL("reactPortal", ({ music }) =>
         E.tryCatch(
           () => music.render(),
           e => `music.render() threw an error:\n${e}`
         )
-      );
+      )
+      .return(({ reactPortal }) => reactPortal);
   }
   constructor(scale: Vex.Flow.StaveNote[], style: unknown) {
     this.context = new ReactNativeSVGContext(NotoFontPack, style);

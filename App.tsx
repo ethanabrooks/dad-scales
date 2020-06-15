@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ReactPortal } from "react";
 import { Picker, StyleSheet, Text, View } from "react-native";
 import rawPatterns from "./patterns.json";
 import { Note, NUM_TONES } from "./note";
@@ -12,6 +12,7 @@ import { Do } from "fp-ts-contrib/lib/Do";
 import { Music } from "./music";
 import * as R from "./result";
 import { MakeResult, Result } from "./result";
+import { ReactNativeSVGContext } from "standalone-vexflow-context";
 
 type Scale = { pattern: number[]; roots: Map<string, Note> };
 
@@ -108,11 +109,11 @@ export default function App() {
           ))
     )
   );
-  const sheetMusic: Result<JSX.Element | null> = pipe(
+  const sheetMusic: Result<ReactPortal | null> = pipe(
     root,
     O.fold(
       () => E.right(null),
-      (rootKey: string) =>
+      (rootKey: string): Result<ReactPortal | null> =>
         Do(E.either)
           .bind("scaleMap", scaleMap)
           .bind(
@@ -136,20 +137,10 @@ export default function App() {
               .reduce(modCumSum, { acc: [rootIndex], prev: rootIndex })
               .acc.map(v => new Note(v, rootValue.sharp))
           )
-          .bindL("music", ({ notes }) => {
-            console.log(notes);
-            return E.tryCatch(
-              () => new Music(notes, styles.svg),
-              e => `new Music(...) threw an error:\n${e}\nnotes:\n${notes}`
-            );
+          .bindL("reactPortal", ({ notes }) => {
+            return Music.getContext(notes, styles.music);
           })
-          .bindL("component", ({ music }) =>
-            E.tryCatch(
-              () => music.render(),
-              e => `music.render() threw an error:\n${e}`
-            )
-          )
-          .return(({ component }) => component)
+          .return(({ reactPortal }) => reactPortal)
     )
   );
   return pipe(
