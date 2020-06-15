@@ -14,32 +14,17 @@ import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import { ReactPortal } from "react";
 
-function cumSum(numbers: number[]) {
-  pipe(
-    numbers,
-    A.scanLeft(0, (a, b) => a + b)
-  );
-}
-
 let sequence = A.array.sequence(E.either);
 export class Music {
   context: ReactNativeSVGContext;
-  render(): ReactPortal {
-    return this.context.render() as ReactPortal;
-  }
   static getContext(notes: Note[], style: unknown): Result<ReactPortal> {
-    const numNotes = pipe(
-      Range(0, Infinity)
-        .map(n => Math.pow(2, n))
-        .filter(n => n >= notes.length)
-        .first(null),
-      O.fromNullable,
-      MakeResult.fromOption("Somehow, numNotes is null")
-    );
+    const numNotes = Range(0, Infinity)
+      .map(n => Math.pow(2, n))
+      .filter(n => n >= notes.length)
+      .first(null);
     const indices = notes.map(n => n.getIndex() % NUM_TONES);
-    const pairs = A.zip(indices, indices.slice(1));
     const octaves = pipe(
-      pairs,
+      A.zip(indices, indices.slice(1)),
       A.scanLeft(4, (o, [i1, i2]) => {
         return i1 < i2 ? o : o + 1;
       })
@@ -50,7 +35,14 @@ export class Music {
       (note, octave) =>
         Do(E.either)
           .bind("string", note.asciiString())
-          .bind("numNotes", numNotes)
+          .bind(
+            "numNotes",
+            pipe(
+              numNotes,
+              O.fromNullable,
+              MakeResult.fromOption("Somehow, numNotes is null")
+            )
+          )
           .bindL("staveNote", ({ string, numNotes }) =>
             E.tryCatch(
               () =>
@@ -76,15 +68,16 @@ export class Music {
         A.zip(staveNotes, accidentals)
       )
       .letL("withAccidentals", ({ zipped }) =>
-        zipped.map(([staveNote, accidental]) =>
-          accidental == null
-            ? E.right(staveNote)
-            : E.tryCatch(
-                () => staveNote.addAccidental(0, accidental),
+        (zipped as [Vex.Flow.StaveNote, null | Vex.Flow.Accidental][]).map(
+          ([staveNote, accidental]) =>
+            accidental == null
+              ? E.right(staveNote)
+              : E.tryCatch(
+                  () => staveNote.addAccidental(0, accidental),
 
-                e =>
-                  `staveNote.addAccidental(0, ${accidental}) threw an error:\n${e}`
-              )
+                  e =>
+                    `staveNote.addAccidental(0, ${accidental}) threw an error:\n${e}`
+                )
         )
       )
       .bindL("scale", ({ withAccidentals }) => sequence(withAccidentals))
@@ -122,5 +115,8 @@ export class Music {
     beams.forEach(function(b) {
       b.setContext(context).draw();
     });
+  }
+  render(): ReactPortal {
+    return this.context.render() as ReactPortal;
   }
 }
