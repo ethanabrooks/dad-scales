@@ -203,7 +203,9 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center"
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "space-around"
   },
   error: {
     flex: 1,
@@ -221,7 +223,9 @@ const styles = StyleSheet.create({
   },
   music: {
     flex: 2,
-    width: "95%"
+    width: "95%",
+    justifyContent: "flex-start",
+    alignItems: "center"
   },
   svg: {}
 });
