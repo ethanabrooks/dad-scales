@@ -13,7 +13,6 @@ import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import { ReactPortal } from "react";
 import { StyleSheet } from "react-native";
-import NamedStyles = StyleSheet.NamedStyles;
 import Svg from "react-native-svg";
 export type Clef = "base" | "treble";
 
@@ -22,7 +21,7 @@ export class Music {
   static getContext(
     notes: Note[],
     clef: Clef,
-    style: NamedStyles<Svg>
+    style: StyleSheet.NamedStyles<Svg>
   ): Result<ReactPortal> {
     const sequence = A.array.sequence(E.either);
     const numNotes = Range(0, Infinity)
@@ -118,7 +117,7 @@ export class Music {
   constructor(
     scale: Vex.Flow.StaveNote[],
     clef: Clef,
-    style: NamedStyles<Svg>
+    style: StyleSheet.NamedStyles<Svg>
   ) {
     this.context = new ReactNativeSVGContext(NotoFontPack, style);
     const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 300);

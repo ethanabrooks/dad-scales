@@ -1,6 +1,5 @@
 declare module "standalone-vexflow-context" {
-  import { StyleSheet } from "react-native";
-  import NamedStyles = StyleSheet.NamedStyles;
+  import NamedStyles from "react-native/StyleSheet";
 
   export const NotoFontPack: { getFont: NamedStyles<Font> };
   export class ReactNativeSVGContext extends SVGContext {
