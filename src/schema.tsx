@@ -25,7 +25,7 @@ export const schema = {
           properties: {
             name: { type: "string", isNoteValue: true },
             sharp: { type: "boolean" },
-            mp3: { type: "string", nullable: true }
+            mp3: { type: ["string", "null"] }
           },
           required: ["name", "sharp", "mp3"]
         },

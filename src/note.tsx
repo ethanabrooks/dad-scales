@@ -59,15 +59,16 @@ export class Note {
   }
 
   static indexFromString(s: string, sharpVersion: boolean): Result<number> {
-    const searchResult: number = List(toneStrings)
-      .map(({ sharp, flat }) => (sharpVersion ? sharp : flat))
-      .findIndex(s1 => s == s1);
+    let stringList = List(toneStrings).map(({ sharp, flat }) =>
+      sharpVersion ? sharp : flat
+    );
+    const searchResult: number = stringList.findIndex(s1 => s == s1);
     const checkResult = E.fromPredicate(
-      (r: number) => r > 0,
-      r =>
+      (r: number) => r >= 0,
+      () =>
         `Did not find ${
           sharpVersion ? "sharp" : "flat"
-        } version of ${s} in toneStrings:\n${toneStrings}`
+        } version of "${s}" in toneStrings:\n${toneStrings}`
     );
     return checkResult(searchResult);
   }
