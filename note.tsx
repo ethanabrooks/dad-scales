@@ -1,5 +1,12 @@
 import { Map } from "immutable";
 import Vex from "vexflow";
+import { Option } from "fp-ts/es6/Option";
+import * as O from "fp-ts/lib/Option";
+import * as A from "fp-ts/lib/Array";
+
+import { pipe } from "fp-ts/lib/function";
+import * as E from "fp-ts/lib/Either";
+import { MakeResult, Result } from "./result";
 
 type Accidental = "#" | "b" | null;
 type Tone = { base: string; accidental: Accidental };
@@ -37,6 +44,8 @@ const tones: { sharp: Tone; flat: Tone }[] = toneStrings.map(
   }
 );
 
+type ToneAlternatives = { sharp: Tone; flat: Tone };
+
 export class Note {
   index: number;
   sharp: boolean;
@@ -46,44 +55,59 @@ export class Note {
     this.sharp = sharp;
   }
 
-  static fromString(s: string): undefined | Note {
-    return toneIndexes.get(s);
+  static fromString(s: string): Result<Note> {
+    return pipe(
+      O.fromNullable(toneIndexes.get(s)),
+      MakeResult.fromOption(`Failed to convert ${s} to a Note`)
+    );
   }
 
-  getIndex() {
+  getIndex(): number {
     return this.index;
   }
 
-  getAccidental() {
-    let tone: { sharp: Tone; flat: Tone } = tones[this.index];
-    if (tone) {
-      return (this.sharp ? tone.sharp : tone.flat).accidental;
-    }
+  getAccidental(): Result<Accidental> {
+    return pipe(
+      A.lookup(this.index, tones) as Option<ToneAlternatives>,
+      MakeResult.withRangeError(this.index, tones),
+      E.map(({ sharp, flat }: ToneAlternatives) => {
+        let tone: Tone = this.sharp ? sharp : flat;
+        return tone.accidental;
+      })
+    );
   }
 
-  vexFlowAccidental() {
-    switch (this.getAccidental()) {
-      case "#":
-        return new Vex.Flow.Accidental("#");
-      case "b":
-        return new Vex.Flow.Accidental("b");
-      default:
-        return null;
-    }
+  vexFlowAccidental(): Result<null | Vex.Flow.Accidental> {
+    return pipe(
+      this.getAccidental(),
+      E.map((accidental: Accidental) => {
+        switch (accidental) {
+          case "#":
+            return new Vex.Flow.Accidental("#");
+          case "b":
+            return new Vex.Flow.Accidental("b");
+          default:
+            return null;
+        }
+      })
+    );
   }
 
-  asciiString() {
-    let tone = toneStrings[this.index];
-    if (tone) {
-      return this.sharp ? tone.sharp : tone.flat;
-    }
+  asciiString(): Result<string> {
+    return pipe(
+      O.fromNullable(toneStrings[this.index]),
+      MakeResult.withRangeError(this.index, toneStrings),
+      E.map(tone => (this.sharp ? tone.sharp : tone.flat))
+    );
   }
 
-  unicodeString() {
-    let asciiString = this.asciiString();
-    return asciiString
-      ? asciiString.replace(/([a-z])b/, "$1♭").replace(/([a-z])#/, "$1♯")
-      : null;
+  unicodeString(): Result<string> {
+    return pipe(
+      this.asciiString(),
+      E.map(asciiString =>
+        asciiString.replace(/([a-z])b/, "$1♭").replace(/([a-z])#/, "$1♯")
+      )
+    );
   }
 }
 const toneIndexes: Map<String, Note> = Map(

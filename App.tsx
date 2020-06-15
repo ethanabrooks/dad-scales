@@ -1,144 +1,179 @@
 import React from "react";
-import { Picker, StyleSheet, View } from "react-native";
+import { Picker, StyleSheet, Text, View } from "react-native";
 import rawPatterns from "./patterns.json";
-import { Music } from "./music";
 import { Note, NUM_TONES } from "./note";
-import { Map } from "immutable";
+import { Map, Seq } from "immutable";
 import * as O from "fp-ts/lib/Option";
-import { Option } from "fp-ts/lib/Option";
+import { none, Option, some } from "fp-ts/lib/Option";
+import * as E from "fp-ts/lib/Either";
 import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import { Do } from "fp-ts-contrib/lib/Do";
-import { pipeable } from "fp-ts/lib/pipeable";
-import unicode = Vex.Flow.unicode;
+import { Music } from "./music";
+import { MakeResult, Result } from "./result";
 
-type Pattern = { name: string; pattern: number[]; roots: Note[] };
 type Scale = { pattern: number[]; roots: Map<string, Note> };
 
-function notEmpty<T>(value: T | null | undefined): value is T {
-  return value !== null && value !== undefined;
+function first<T>(seq: Seq.Indexed<T>): Result<T> {
+  return pipe(
+    O.fromNullable(seq.first(null)),
+    MakeResult.fromOption("Sequence was empty.")
+  );
+}
+
+function modCumSum(
+  { acc, prev }: { acc: number[]; prev: number },
+  curr: number
+) {
+  const sum: number = prev + curr;
+  return { acc: acc.concat(sum % NUM_TONES), prev: sum };
 }
 
 export default function App() {
-  const [scaleIndex, setScaleIndex] = React.useState<number>(0);
-  const [rootIndex, setRootIndex] = React.useState<number | null>(null);
-  const patterns: Pattern[] = rawPatterns.map(({ roots, ...pattern }) => ({
-    roots: roots.map(note => Note.fromString(note)).filter(notEmpty),
-    ...pattern
-  }));
-  const dumbGetPatternMap = () => {
-    let list: (null | [string, Scale])[] = rawPatterns.map(
-      ({ name, pattern, roots }) => {
-        let notes = roots.map(root => Note.fromString(root));
-        if (notes.includes(undefined)) {
-          return null;
-        } else {
-          let pairs = notes.filter(notEmpty).map(
-            (note: Note): [string, Note] | null => {
-              const noteString = note.unicodeString();
-              return noteString ? [noteString, note] : null;
-            }
-          );
-          if (pairs.includes(null)) {
-            return null;
-          } else {
-            let roots = Map(pairs.filter(notEmpty));
-            let newVar: [
-              string,
-              { pattern: number[]; roots: Map<string, Note> }
-            ] = [name, { pattern, roots }];
-            return newVar;
-          }
+  const [scale, setScale] = React.useState<Option<string>>(none);
+  const [root, setRoot] = React.useState<Option<string>>(none);
+  let sequence = A.array.sequence(E.either);
+  let scalePairs: Result<[string, Scale]>[] = rawPatterns.map(
+    ({ name, pattern, roots }): Result<[string, Scale]> => {
+      let pairs: Result<[string, Note]>[] = roots.map(
+        (root: string): Result<[string, Note]> => {
+          return Do(E.either)
+            .bind("note", Note.fromString(root))
+            .bindL("unicodeString", ({ note }) => note.unicodeString())
+            .return(({ note, unicodeString }) => [unicodeString, note]);
         }
-      }
-    );
-    if (list.includes(null)) {
-      return null;
-    } else {
-      return Map(list.filter(notEmpty));
+      );
+      return Do(E.either)
+        .bind("pairs", sequence(pairs))
+        .return(({ pairs }) => [name, { pattern, roots: Map(pairs) }]);
     }
-  };
+  );
+  let scaleMap: Result<Map<string, Scale>> = Do(E.either)
+    .bind("ppairs", sequence(scalePairs))
+    .return(({ ppairs }) => Map(ppairs));
 
-  let sequence = A.array.sequence(O.option);
-  let pairs: Option<[string, Scale]>[] = rawPatterns.map(
-    ({ name, pattern, roots }): Option<[string, Scale]> => {
-      let pairs: Option<[string, Note]>[] = roots.map(
-        (root: string): Option<[string, Note]> =>
-          Do(O.option)
-            .bindL("note", () => O.fromNullable(Note.fromString(root)))
-            .bindL("unicodeString", ({ note }) =>
-              O.fromNullable(note.unicodeString())
+  const scalePicker: Result<JSX.Element> = Do(E.either)
+    .bind("scaleMap", scaleMap)
+    .bindL("firstScale", ({ scaleMap }) => first(scaleMap.keySeq()))
+    .return(
+      ({
+        scaleMap,
+        firstScale
+      }: {
+        scaleMap: Map<string, Scale>;
+        firstScale: string;
+      }) => (
+        <Picker
+          style={styles.picker}
+          selectedValue={firstScale}
+          onValueChange={v => setScale(v)}
+        >
+          {scaleMap
+            .keySeq()
+            .toArray()
+            .map((s, i) => (
+              <Picker.Item label={s} value={s} key={s} />
+            ))}
+        </Picker>
+      )
+    );
+
+  const rootPicker: Result<JSX.Element> = pipe(
+    scale,
+    O.fold(
+      () => E.right(<View style={styles.picker} />),
+      (scaleKey: string) =>
+        Do(E.either)
+          .bind("scaleMap", scaleMap)
+          .bindL("scaleValue", ({ scaleMap }) =>
+            pipe(
+              O.fromNullable(scaleMap.get(scaleKey)),
+              MakeResult.fromOption(
+                `Failed to get key ${scaleKey} from scaleMap: ${scaleMap}`
+              )
             )
-            .return(({ note, unicodeString }) => [unicodeString, note])
-      );
-      return pipe(
-        sequence(pairs),
-        O.mapNullable((pairs: [string, Note][]) => [
-          name,
-          { pattern, roots: Map(pairs) }
-        ])
-      );
-    }
-  );
-  const getPatternMap = pipe(
-    sequence(pairs),
-    O.mapNullable((pairs: [string, Scale][]) => Map(pairs))
-  );
-
-  const patternPicker = (
-    <Picker
-      style={styles.picker}
-      selectedValue={scaleIndex}
-      onValueChange={v => setScaleIndex(v)}
-    >
-      {patterns.map((p: Pattern, i: number) => (
-        <Picker.Item label={p.name} value={i} key={i} />
-      ))}
-    </Picker>
-  );
-  const scale = patterns[scaleIndex];
-  const rootPicker = () => {
-    return scale && scale.roots ? (
-      <Picker
-        style={styles.picker}
-        selectedValue={rootIndex}
-        onValueChange={i => setRootIndex(i)}
-      >
-        {scale.roots
-          .map(n => n.unicodeString())
-          .map((label, i) =>
-            label ? <Picker.Item label={label} value={i} key={i} /> : null
           )
-          .filter(notEmpty)}
-      </Picker>
-    ) : (
-      <View style={styles.picker} />
-    );
-  };
-  const sheetmusic = () => {
-    if (rootIndex !== null) {
-      const root = scale.roots[rootIndex];
-      const cumSum = (
-        { acc, prev }: { acc: number[]; prev: number },
-        curr: number
-      ) => {
-        const sum: number = prev + curr;
-        return { acc: acc.concat(sum % NUM_TONES), prev: sum };
-      };
-      const notes: Note[] = scale.pattern
-        .reduce(cumSum, { acc: [root.getIndex()], prev: root.getIndex() })
-        .acc.map(v => new Note(v, root.sharp));
-      return new Music(notes, styles.svg).render();
-    }
-  };
-  return (
-    <View style={styles.container}>
-      <View style={styles.pickers}>
-        {patternPicker}
-        {rootPicker()}
+          .bindL("firstRoot", ({ scaleValue }) =>
+            first(scaleValue.roots.keySeq())
+          )
+          .return(({ firstRoot, scaleValue }) => (
+            <Picker
+              style={styles.picker}
+              selectedValue={firstRoot}
+              onValueChange={i => setRoot(i)}
+            >
+              {scaleValue.roots
+                .keySeq()
+                .toArray()
+                .map(
+                  (s: string): JSX.Element => (
+                    <Picker.Item label={s} value={s} key={s} />
+                  )
+                )}
+            </Picker>
+          ))
+    )
+  );
+  const sheetMusic: Result<JSX.Element | null> = pipe(
+    scale,
+    O.fold(
+      () => E.right(null),
+      (scaleKey: string) =>
+        Do(E.either)
+          .bind("scaleMap", scaleMap)
+          .bindL("scaleValue", ({ scaleMap }) =>
+            pipe(
+              O.fromNullable(scaleMap.get(scaleKey)),
+              MakeResult.fromOption<Scale>(
+                `Failed to get key ${scaleKey} from scaleMap: ${scaleMap}`
+              )
+            )
+          )
+          .bind(
+            "rootKey",
+            pipe(
+              root,
+              MakeResult.fromOption<string>(
+                "Somehow, root was none when scale was not none."
+              )
+            )
+          )
+          .bindL("rootValue", ({ rootKey, scaleValue }) =>
+            pipe(
+              O.fromNullable(scaleValue.roots.get(rootKey)),
+              MakeResult.fromOption<Note>(`Failed`)
+            )
+          )
+          .letL("rootIndex", ({ rootValue }) => rootValue.getIndex())
+          .letL("notes", ({ scaleValue, rootIndex, rootValue }) =>
+            scaleValue.pattern
+              .reduce(modCumSum, { acc: [rootIndex], prev: rootIndex })
+              .acc.map(v => new Note(v, rootValue.sharp))
+          )
+          .return(({ notes }) => new Music(notes, styles.svg).render())
+    )
+  );
+  return pipe(
+    Do(E.either)
+      .bind("scalePicker", scalePicker)
+      .bind("rootPicker", rootPicker)
+      .bind("sheetMusic", sheetMusic)
+      .return(({ scalePicker, rootPicker, sheetMusic }) => (
+        <View style={styles.container}>
+          <View style={styles.pickers}>
+            {scalePicker}
+            {rootPicker}
+          </View>
+          <View style={styles.music}>{sheetMusic}</View>
+        </View>
+      )),
+    E.getOrElse((e: string) => (
+      <View style={styles.error}>
+        <Text style={{ fontWeight: "bold" }}>Error!</Text>
+        <Text>🙀</Text>
+        <Text style={{ textAlign: "center" }}>{e}</Text>
       </View>
-      <View style={styles.music}>{sheetmusic()}</View>
-    </View>
+    ))
   );
 }
 
@@ -147,6 +182,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 40,
     alignItems: "center"
+  },
+  error: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%"
   },
   picker: {
     height: "50%"
