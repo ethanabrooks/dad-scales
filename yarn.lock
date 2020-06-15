@@ -1449,11 +1449,6 @@
   resolved "https://registry.yarnpkg.com/@types/stack-utils/-/stack-utils-1.0.1.tgz#0a851d3bd96498fa25c33ab7278ed3bd65f06c3e"
   integrity sha512-l42BggppR6zLmpfU6fq9HEa2oGPEI8yrSPL3GITjfRInppYFahObbIQOQK3UGxEnyQpltZLaPe75046NOZQikw==
 
-"@types/vexflow@^1.2.36":
-  version "1.2.36"
-  resolved "https://registry.yarnpkg.com/@types/vexflow/-/vexflow-1.2.36.tgz#563af838352ede5db48e3822fa77afbdc5cfeca1"
-  integrity sha512-tW5U7oy3dRwpH6sB1YK2Usjlqiux8EA1HNXYi+7ShR5tM57967i3oqNRRVLwjEsx6kpXa9v5t/tPELxjWCbPEw==
-
 "@types/websql@^0.0.27":
   version "0.0.27"
   resolved "https://registry.yarnpkg.com/@types/websql/-/websql-0.0.27.tgz#621a666a7f02018e7cbb4abab956a25736c27d71"

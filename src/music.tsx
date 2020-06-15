@@ -12,6 +12,9 @@ import * as O from "fp-ts/lib/Option";
 import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import { ReactPortal } from "react";
+import { StyleSheet } from "react-native";
+import NamedStyles = StyleSheet.NamedStyles;
+import Svg from "react-native-svg";
 export type Clef = "base" | "treble";
 
 export class Music {
@@ -19,7 +22,7 @@ export class Music {
   static getContext(
     notes: Note[],
     clef: Clef,
-    style: unknown
+    style: NamedStyles<Svg>
   ): Result<ReactPortal> {
     const sequence = A.array.sequence(E.either);
     const numNotes = Range(0, Infinity)
@@ -112,20 +115,22 @@ export class Music {
       )
       .return(({ reactPortal }) => reactPortal);
   }
-  constructor(scale: Vex.Flow.StaveNote[], clef: Clef, style: unknown) {
+  constructor(
+    scale: Vex.Flow.StaveNote[],
+    clef: Clef,
+    style: NamedStyles<Svg>
+  ) {
     this.context = new ReactNativeSVGContext(NotoFontPack, style);
     const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 300);
     stave.setContext(this.context);
     console.log(scale);
-    // @ts-ignore
     stave.setClef(clef);
-    // @ts-ignore
     stave.setTimeSignature(`4/4`);
     stave.draw();
     const beams = Vex.Flow.Beam.generateBeams(scale);
     Vex.Flow.Formatter.FormatAndDraw(this.context, stave, scale);
     const context = this.context;
-    beams.forEach(function(b) {
+    beams.forEach(function(b: Vex.Flow.Beam) {
       b.setContext(context).draw();
     });
   }

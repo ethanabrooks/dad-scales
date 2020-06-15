@@ -2,7 +2,7 @@ import { View } from "react-native";
 import React from "react";
 import { Sampler } from "tone";
 
-export const Player: React.FC = A1 => {
+export const Player: React.FC = ({ A1 }) => {
   const [isLoaded, setLoaded] = React.useState(false);
   const sampler: React.MutableRefObject<Sampler> = React.useRef(null);
 
