@@ -11,6 +11,7 @@ import { pipe } from "fp-ts/lib/function";
 import { Do } from "fp-ts-contrib/lib/Do";
 import { Music } from "./music";
 import { MakeResult, Result } from "./result";
+import * as R from "./result";
 
 type Scale = { pattern: number[]; roots: Map<string, Note> };
 
@@ -85,14 +86,7 @@ export default function App() {
       (scaleKey: string) =>
         Do(E.either)
           .bind("scaleMap", scaleMap)
-          .bindL("scaleValue", ({ scaleMap }) =>
-            pipe(
-              O.fromNullable(scaleMap.get(scaleKey)),
-              MakeResult.fromOption(
-                `Failed to get key ${scaleKey} from scaleMap: ${scaleMap}`
-              )
-            )
-          )
+          .bindL("scaleValue", ({ scaleMap }) => R.lookup(scaleKey, scaleMap))
           .bindL("firstRoot", ({ scaleValue }) =>
             first(scaleValue.roots.keySeq())
           )
@@ -121,14 +115,7 @@ export default function App() {
       (scaleKey: string) =>
         Do(E.either)
           .bind("scaleMap", scaleMap)
-          .bindL("scaleValue", ({ scaleMap }) =>
-            pipe(
-              O.fromNullable(scaleMap.get(scaleKey)),
-              MakeResult.fromOption<Scale>(
-                `Failed to get key ${scaleKey} from scaleMap: ${scaleMap}`
-              )
-            )
-          )
+          .bindL("scaleValue", ({ scaleMap }) => R.lookup(scaleKey, scaleMap))
           .bind(
             "rootKey",
             pipe(
@@ -139,10 +126,7 @@ export default function App() {
             )
           )
           .bindL("rootValue", ({ rootKey, scaleValue }) =>
-            pipe(
-              O.fromNullable(scaleValue.roots.get(rootKey)),
-              MakeResult.fromOption<Note>(`Failed`)
-            )
+            R.lookup(rootKey, scaleValue.roots)
           )
           .letL("rootIndex", ({ rootValue }) => rootValue.getIndex())
           .letL("notes", ({ scaleValue, rootIndex, rootValue }) =>

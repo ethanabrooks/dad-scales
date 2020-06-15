@@ -1,8 +1,9 @@
-import { Either, left } from "fp-ts/lib/Either";
+import * as E from "fp-ts/lib/Either";
+import { Either } from "fp-ts/lib/Either";
 import { pipe } from "fp-ts/lib/function";
 import * as O from "fp-ts/lib/Option";
-import * as E from "fp-ts/lib/Either";
 import { Option } from "fp-ts/lib/Option";
+import { Map } from "immutable";
 
 export type Result<T> = Either<string, T>;
 
@@ -34,4 +35,11 @@ export class MakeResult {
       )
     );
   }
+}
+
+export function lookup<K, V>(key: K, map: Map<K, V>): Result<V> {
+  return pipe(
+    O.fromNullable(map.get(key)),
+    MakeResult.fromOption(`Failed to get key ${key} from map: ${map}`)
+  );
 }
