@@ -1,6 +1,6 @@
 import React, { ReactPortal } from "react";
 import { Picker, StyleSheet, Text, View } from "react-native";
-import rawScales from "./scales.json";
+import rawScales from "../scales.json";
 import { Note, NUM_TONES } from "./note";
 import { Map, Seq } from "immutable";
 import * as O from "fp-ts/lib/Option";
@@ -76,7 +76,11 @@ export default function App() {
   );
 
   const clefPicker: JSX.Element = (
-    <Picker style={styles.picker} selectedValue={clef} onValueChange={setClef}>
+    <Picker
+      style={styles.picker}
+      selectedValue={clef}
+      onValueChange={v => setClef(v)}
+    >
       <Picker.Item label={"treble"} value={"treble"} key={"treble"} />
       <Picker.Item label={"bass"} value={"bass"} key={"bass"} />
     </Picker>
@@ -191,7 +195,6 @@ export default function App() {
       .return(({ scalePicker, rootPicker, sheetMusic }) => (
         <View style={styles.container}>
           <View style={styles.pickers}>
-            {clefPicker}
             {scalePicker}
             {rootPicker}
           </View>

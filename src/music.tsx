@@ -3,7 +3,6 @@ import Vex from "vexflow";
 import {
   NotoFontPack,
   ReactNativeSVGContext
-  // @ts-ignore
 } from "standalone-vexflow-context";
 import { Note, NUM_TONES } from "./note";
 import { Do } from "fp-ts-contrib/lib/Do";
