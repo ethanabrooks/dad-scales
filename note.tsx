@@ -11,7 +11,7 @@ import { MakeResult, Result } from "./result";
 type Accidental = "#" | "b" | null;
 type Tone = { base: string; accidental: Accidental };
 
-const toneStrings = [
+export const toneStrings = [
   { sharp: "c", flat: "c" },
   { sharp: "c#", flat: "db" },
   { sharp: "d", flat: "d" },
@@ -44,7 +44,7 @@ const tones: { sharp: Tone; flat: Tone }[] = toneStrings.map(
   }
 );
 
-type ToneAlternatives = { sharp: Tone; flat: Tone };
+export type ToneAlternatives = { sharp: Tone; flat: Tone };
 
 export class Note {
   index: number;
@@ -97,10 +97,7 @@ export class Note {
     return pipe(
       O.fromNullable(toneStrings[this.index]),
       MakeResult.withRangeError(this.index, toneStrings),
-      E.map(tone => {
-        console.log(tone);
-        return this.sharp ? tone.sharp : tone.flat;
-      })
+      E.map(tone => (this.sharp ? tone.sharp : tone.flat))
     );
   }
 

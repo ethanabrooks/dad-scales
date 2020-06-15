@@ -44,11 +44,12 @@ export default function App() {
             () => {
               let validate = ajv.compile(schema);
               const valid = validate(rawScales);
+              console.error(ajv.errorsText(validate.errors));
               return valid
                 ? E.right(null)
                 : E.left(ajv.errorsText(validate.errors));
             },
-            e => `validate threw an error`
+            e => `validate threw an error.`
           )
         )
         .let(
@@ -126,11 +127,9 @@ export default function App() {
               {scaleValue.roots
                 .keySeq()
                 .toArray()
-                .map(
-                  (r: string): JSX.Element => (
-                    <Picker.Item label={r} value={r} key={r} />
-                  )
-                )}
+                .map(r => (
+                  <Picker.Item label={r} value={r} key={r} />
+                ))}
             </Picker>
           ))
     )
