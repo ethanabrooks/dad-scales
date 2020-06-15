@@ -5,75 +5,109 @@ import {
   ReactNativeSVGContext
   // @ts-ignore
 } from "standalone-vexflow-context";
-import { Note } from "./note";
+import { Note, NUM_TONES } from "./note";
+import { Do } from "fp-ts-contrib/lib/Do";
+import { MakeResult, Result } from "./result";
+import * as E from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
+import { Option } from "fp-ts/lib/Option";
+import * as A from "fp-ts/lib/Array";
+import { pipe } from "fp-ts/lib/function";
 
+function cumSum(numbers: number[]) {
+  pipe(
+    numbers,
+    A.scanLeft(0, (a, b) => a + b)
+  );
+}
+
+let sequence = A.array.sequence(E.either);
 export class Music {
   context: ReactNativeSVGContext;
   render() {
     return this.context.render();
   }
-  constructor(notes: Note[], style: unknown) {
-    const length = notes.length;
-    const numNotes = Range(0, Infinity)
-      .map(n => Math.pow(2, n))
-      .filter(n => n >= length)
-      .first(null);
-    if (!numNotes) {
-      throw Error("Mis-computed numNotes.");
-    } else {
-      this.context = new ReactNativeSVGContext(NotoFontPack, style);
-      let initializer: {
-        octave: number;
-        last: Note | null;
-        staveNotes: Vex.Flow.StaveNote[];
-      } = {
-        octave: 4,
-        last: null,
-        staveNotes: []
-      };
-      const scale = notes
-        .reduce(({ octave, last, staveNotes }, note: Note) => {
-          if (last ? last.getIndex() > note.getIndex() : false) {
-            octave++;
-          }
-          let staveNote = new Vex.Flow.StaveNote({
+  static build(notes: Note[], style: unknown): Result<ReactNativeSVGContext> {
+    const numNotes = pipe(
+      Range(0, Infinity)
+        .map(n => Math.pow(2, n))
+        .filter(n => n >= notes.length)
+        .first(null),
+      O.fromNullable,
+      MakeResult.fromOption("Somehow, numNotes is null")
+    );
+    const indices = notes.map(n => n.getIndex() % NUM_TONES);
+    const pairs = A.zip(indices, indices.slice(1));
+    const octaves = pipe(
+      pairs,
+      A.scanLeft(4, (o, [i1, i2]) => {
+        return i1 < i2 ? o : o + 1;
+      })
+    );
+    const staveNotes = A.zipWith(notes, octaves, (note, octave) =>
+      E.tryCatch(
+        () =>
+          new Vex.Flow.StaveNote({
             clef: "treble",
             keys: [`${note.asciiString()}/${octave}`],
             duration: `${numNotes}`
-          });
-          const accidental = note.vexFlowAccidental();
-          if (accidental) {
-            staveNote = staveNote.addAccidental(0, accidental);
-          }
-          return {
-            octave: octave,
-            last: note,
-            staveNotes: staveNotes.concat(staveNote)
-          };
-        }, initializer)
-        .staveNotes.concat(
-          Array(numNotes - notes.length).fill(
-            new Vex.Flow.StaveNote({
-              clef: "treble",
-              keys: ["bb/4"],
-              duration: `${numNotes}r`
-            })
-          )
-        );
+          }),
+        e => `new Vex.Flow.StaveNote({
+            clef: "treble",
+            keys: [${note.asciiString()}/${octave}],
+            duration: ${numNotes}
+          }) threw an error:\n${e}`
+      )
+    );
+    return Do(E.either)
+      .bind("staveNotes", sequence(staveNotes))
+      .bind("accidentals", sequence(notes.map(n => n.vexFlowAccidental())))
+      .letL("zipped", ({ staveNotes, accidentals }) =>
+        A.zip(staveNotes, accidentals)
+      )
+      .letL("withAccidentals", ({ zipped }) =>
+        zipped.map(([staveNote, accidental]) =>
+          accidental == null
+            ? E.right(staveNote)
+            : E.tryCatch(
+                () => staveNote.addAccidental(0, accidental),
 
-      const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 300);
-      stave.setContext(this.context);
-      // @ts-ignore
-      stave.setClef("treble");
-      // @ts-ignore
-      stave.setTimeSignature(`4/4`);
-      stave.draw();
-      const beams = Vex.Flow.Beam.generateBeams(scale);
-      Vex.Flow.Formatter.FormatAndDraw(this.context, stave, scale);
-      const context = this.context;
-      beams.forEach(function(b) {
-        b.setContext(context).draw();
-      });
-    }
+                e =>
+                  `staveNote.addAccidental(0, ${accidental}) threw an error:\n${e}`
+              )
+        )
+      )
+      .bindL("scale", ({ withAccidentals }) => sequence(withAccidentals))
+      .bindL("music", ({ scale }) =>
+        E.tryCatch(
+          () => new Music(scale, style),
+          e =>
+            `new Music(scale, style) threw an error:\n${e}
+              \nscale:${scale}
+              \nstyle:${style}`
+        )
+      )
+      .return(({ music }) =>
+        E.tryCatch(
+          () => music.render(),
+          e => `music.render() threw an error:\n${e}`
+        )
+      );
+  }
+  constructor(scale: Vex.Flow.StaveNote[], style: unknown) {
+    this.context = new ReactNativeSVGContext(NotoFontPack, style);
+    const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 300);
+    stave.setContext(this.context);
+    // @ts-ignore
+    stave.setClef("treble");
+    // @ts-ignore
+    stave.setTimeSignature(`4/4`);
+    stave.draw();
+    const beams = Vex.Flow.Beam.generateBeams(scale);
+    Vex.Flow.Formatter.FormatAndDraw(this.context, stave, scale);
+    const context = this.context;
+    beams.forEach(function(b) {
+      b.setContext(context).draw();
+    });
   }
 }

@@ -4,14 +4,14 @@ import rawPatterns from "./patterns.json";
 import { Note, NUM_TONES } from "./note";
 import { Map, Seq } from "immutable";
 import * as O from "fp-ts/lib/Option";
-import { none, Option, some } from "fp-ts/lib/Option";
+import { Option, some } from "fp-ts/lib/Option";
 import * as E from "fp-ts/lib/Either";
 import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import { Do } from "fp-ts-contrib/lib/Do";
 import { Music } from "./music";
-import { MakeResult, Result } from "./result";
 import * as R from "./result";
+import { MakeResult, Result } from "./result";
 
 type Scale = { pattern: number[]; roots: Map<string, Note> };
 
@@ -31,8 +31,8 @@ function modCumSum(
 }
 
 export default function App() {
-  const [scale, setScale] = React.useState<Option<string>>(none);
-  const [root, setRoot] = React.useState<Option<string>>(none);
+  const [scale, setScale] = React.useState<Option<string>>(O.none);
+  const [root, setRoot] = React.useState<Option<string>>(O.none);
   let sequence = A.array.sequence(E.either);
   let scalePairs: Result<[string, Scale]>[] = rawPatterns.map(
     ({ name, pattern, roots }): Result<[string, Scale]> => {
@@ -50,8 +50,8 @@ export default function App() {
     }
   );
   let scaleMap: Result<Map<string, Scale>> = Do(E.either)
-    .bind("ppairs", sequence(scalePairs))
-    .return(({ ppairs }) => Map(ppairs));
+    .bind("pairs", sequence(scalePairs))
+    .return(({ pairs }) => Map(pairs));
 
   const scalePicker: Result<JSX.Element> = Do(E.either)
     .bind("scaleMap", scaleMap)
@@ -67,12 +67,12 @@ export default function App() {
         <Picker
           style={styles.picker}
           selectedValue={firstScale}
-          onValueChange={v => setScale(v)}
+          onValueChange={s => setScale(some(s))}
         >
           {scaleMap
             .keySeq()
             .toArray()
-            .map((s, i) => (
+            .map(s => (
               <Picker.Item label={s} value={s} key={s} />
             ))}
         </Picker>
@@ -94,14 +94,14 @@ export default function App() {
             <Picker
               style={styles.picker}
               selectedValue={firstRoot}
-              onValueChange={i => setRoot(i)}
+              onValueChange={r => setRoot(some(r))}
             >
               {scaleValue.roots
                 .keySeq()
                 .toArray()
                 .map(
-                  (s: string): JSX.Element => (
-                    <Picker.Item label={s} value={s} key={s} />
+                  (r: string): JSX.Element => (
+                    <Picker.Item label={r} value={r} key={r} />
                   )
                 )}
             </Picker>
@@ -109,23 +109,25 @@ export default function App() {
     )
   );
   const sheetMusic: Result<JSX.Element | null> = pipe(
-    scale,
+    root,
     O.fold(
       () => E.right(null),
-      (scaleKey: string) =>
+      (rootKey: string) =>
         Do(E.either)
           .bind("scaleMap", scaleMap)
-          .bindL("scaleValue", ({ scaleMap }) => R.lookup(scaleKey, scaleMap))
           .bind(
-            "rootKey",
+            "scaleKey",
             pipe(
-              root,
+              scale,
               MakeResult.fromOption<string>(
-                "Somehow, root was none when scale was not none."
+                `Somehow, scale was none when root was ${root}.`
               )
             )
           )
-          .bindL("rootValue", ({ rootKey, scaleValue }) =>
+          .bindL("scaleValue", ({ scaleKey, scaleMap }) =>
+            R.lookup(scaleKey, scaleMap)
+          )
+          .bindL("rootValue", ({ scaleValue }) =>
             R.lookup(rootKey, scaleValue.roots)
           )
           .letL("rootIndex", ({ rootValue }) => rootValue.getIndex())
@@ -134,7 +136,20 @@ export default function App() {
               .reduce(modCumSum, { acc: [rootIndex], prev: rootIndex })
               .acc.map(v => new Note(v, rootValue.sharp))
           )
-          .return(({ notes }) => new Music(notes, styles.svg).render())
+          .bindL("music", ({ notes }) => {
+            console.log(notes);
+            return E.tryCatch(
+              () => new Music(notes, styles.svg),
+              e => `new Music(...) threw an error:\n${e}\nnotes:\n${notes}`
+            );
+          })
+          .bindL("component", ({ music }) =>
+            E.tryCatch(
+              () => music.render(),
+              e => `music.render() threw an error:\n${e}`
+            )
+          )
+          .return(({ component }) => component)
     )
   );
   return pipe(
