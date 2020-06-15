@@ -12,7 +12,6 @@ import { Do } from "fp-ts-contrib/lib/Do";
 import { Music } from "./music";
 import * as R from "./result";
 import { MakeResult, Result } from "./result";
-import { ReactNativeSVGContext } from "standalone-vexflow-context";
 
 type Scale = { pattern: number[]; roots: Map<string, Note> };
 
@@ -96,7 +95,7 @@ export default function App() {
           )
           .return(({ firstRoot, scaleValue }) => (
             <Picker
-              style={styles.picker}
+              style={{ backgroundColor: "white", ...styles.picker }}
               selectedValue={pipe(
                 root,
                 O.getOrElse(() => firstRoot)
@@ -144,7 +143,7 @@ export default function App() {
               .acc.map(v => new Note(v, rootValue.sharp))
           )
           .bindL("reactPortal", ({ notes }) => {
-            return Music.getContext(notes, styles.music);
+            return Music.getContext(notes, styles.svg);
           })
           .return(({ reactPortal }) => reactPortal)
     )
@@ -176,7 +175,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 40,
     alignItems: "center"
   },
   error: {
@@ -190,15 +188,12 @@ const styles = StyleSheet.create({
   },
   pickers: {
     justifyContent: "space-evenly",
-    flex: 3,
+    flex: 1 + Math.sqrt(5),
     width: "100%"
   },
   music: {
-    flex: 1,
-    width: "100%"
+    flex: 2,
+    width: "95%"
   },
-  svg: {
-    position: "absolute",
-    width: "100%"
-  }
+  svg: {}
 });
