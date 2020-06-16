@@ -1,23 +1,11 @@
 import * as E from "fp-ts/lib/Either";
 import { Either } from "fp-ts/lib/Either";
-import { pipe } from "fp-ts/lib/function";
+import { Lazy, pipe } from "fp-ts/lib/function";
 import * as O from "fp-ts/lib/Option";
-import * as TE from "fp-ts/lib/TaskEither";
 import { Option } from "fp-ts/lib/Option";
 import { Map } from "immutable";
-import { Lazy } from "fp-ts/lib/function";
-import { Do } from "fp-ts-contrib/lib/Do";
-import { Audio, AVPlaybackStatus } from "expo-av";
-import { Sound } from "expo-av/build/Audio/Sound";
-import { AVPlaybackSource } from "expo-av/build/AV";
 
 export type Result<T> = Either<string, T>;
-
-const getSoundThunk: (
-  path: AVPlaybackSource
-) => Promise<{ sound: Sound; status: AVPlaybackStatus }> = (
-  path: AVPlaybackSource
-) => Audio.Sound.createAsync(path, { shouldPlay: true });
 
 export function result<T>(
   f: Lazy<Promise<T>>,
