@@ -1,5 +1,5 @@
 import React, { ReactPortal } from "react";
-import { Picker, StyleSheet, Text, View } from "react-native";
+import { Button, Picker, Text, TouchableOpacity, View } from "react-native";
 import rawScales from "../scales.json";
 import { Note, NUM_TONES, Root } from "./note";
 import { Map, Seq } from "immutable";
@@ -15,8 +15,13 @@ import * as R from "./result";
 import { MakeResult, Result } from "./result";
 import * as T from "./tresult";
 import { ajv, schema } from "./schema";
+import { styles } from "./styles";
+import { Svg } from "expo";
 
 type Scale = { pattern: number[]; roots: Map<string, Root> };
+type State =
+  | { type: "loading" }
+  | { type: "loaded"; scaleMap: Result<Map<string, Scale>> };
 
 function modCumSum(
   { acc, prev }: { acc: number[]; prev: number },
@@ -33,15 +38,11 @@ export function first<T>(seq: Seq.Indexed<T>): Result<T> {
   );
 }
 
-type State =
-  | { type: "loading" }
-  | { type: "loaded"; scaleMap: Result<Map<string, Scale>> };
-
 export default function App(): JSX.Element {
   const [state, setState] = React.useState<State>({ type: "loading" });
   const [clef, setClef] = React.useState<Clef>("treble");
-  const [scale, setScale] = React.useState<Option<string>>(O.some("major"));
-  const [root, setRoot] = React.useState<Option<string>>(O.some("c"));
+  const [scaleName, setScale] = React.useState<Option<string>>(O.some("major"));
+  const [rootName, setRoot] = React.useState<Option<string>>(O.some("c"));
   const [play, setPlay] = React.useState<boolean>(false);
   const sequence = A.array.sequence(TE.taskEither);
   const scaleMapTask: T.Result<Map<string, Scale>> = pipe(
@@ -133,7 +134,7 @@ export default function App(): JSX.Element {
                   <Picker
                     style={styles.picker}
                     selectedValue={pipe(
-                      scale,
+                      scaleName,
                       O.getOrElse(() => firstScale)
                     )}
                     onValueChange={s => setScale(some(s))}
@@ -156,7 +157,7 @@ export default function App(): JSX.Element {
       );
 
       const rootPicker: Result<JSX.Element> = pipe(
-        scale,
+        scaleName,
         O.fold(
           () => E.right(<View style={styles.picker} />),
           (scaleKey: string): Result<JSX.Element> =>
@@ -178,7 +179,7 @@ export default function App(): JSX.Element {
                   <Picker
                     style={{ backgroundColor: "white", ...styles.picker }}
                     selectedValue={pipe(
-                      root,
+                      rootName,
                       O.getOrElse(() => firstRoot)
                     )}
                     onValueChange={r => setRoot(some(r))}
@@ -195,67 +196,108 @@ export default function App(): JSX.Element {
         )
       );
 
-      const sheetMusic: Result<ReactPortal | null> = pipe(
-        root,
-        O.fold(
-          () => E.right(null),
-          (rootKey: string): Result<ReactPortal | null> => {
-            return Do(E.either)
-              .bind(
-                "scaleKey",
-                pipe(
-                  scale,
-                  MakeResult.fromOption<string>(
-                    `Somehow, scale was none when root was ${root}.`
-                  )
+      const scaleAndRoot: Option<Result<{ scale: Scale; root: Root }>> = pipe(
+        rootName,
+        O.mapNullable((name: string) =>
+          Do(E.either)
+            .bind(
+              "scaleName",
+              pipe(
+                scaleName,
+                MakeResult.fromOption<string>(
+                  `Somehow, scale was none when root was ${rootName}.`
                 )
               )
-              .bind("scaleMap", state.scaleMap)
-              .bindL(
-                "scaleValue",
-                ({ scaleKey, scaleMap }): Result<Scale> =>
-                  R.lookup(scaleKey, scaleMap)
-              )
-              .bindL(
-                "rootValue",
-                ({ scaleValue }): Result<Root> =>
-                  R.lookup(rootKey, scaleValue.roots)
-              )
-              .letL(
-                "rootIndex",
-                ({ rootValue }): number => rootValue.getIndex()
-              )
+            )
+            .bind("scaleMap", state.scaleMap)
+            .bindL(
+              "scale",
+              ({ scaleName, scaleMap }): Result<Scale> =>
+                R.lookup(scaleName, scaleMap)
+            )
+            .bindL("root", ({ scale }) => R.lookup(name, scale.roots))
+            .return(({ scale, root }) => ({
+              scale,
+              root
+            }))
+        )
+      );
+
+      const sheetMusic: Result<ReactPortal | JSX.Element> = pipe(
+        scaleAndRoot,
+        O.fold(
+          () => E.right(<View style={styles.music} />),
+          (scaleAndRoot): Result<ReactPortal | JSX.Element> =>
+            Do(E.either)
+              .bind("scaleAndRoot", scaleAndRoot)
               .letL(
                 "notes",
-                ({ scaleValue, rootIndex, rootValue }): Note[] =>
-                  scaleValue.pattern
+                ({ scaleAndRoot: { scale, root } }): Note[] =>
+                  scale.pattern
                     .reduce(modCumSum, {
-                      acc: [rootIndex],
-                      prev: rootIndex
+                      acc: [root.getIndex()],
+                      prev: root.getIndex()
                     })
-                    .acc.map(v => new Note(v, rootValue.sharp))
+                    .acc.map(v => new Note(v, root.sharp))
               )
               .bindL(
                 "reactPortal",
                 ({ notes }): Result<ReactPortal> =>
                   Music.getContext(notes, clef, styles.svg)
               )
-              .return(({ reactPortal }) => reactPortal);
-          }
+              .return(({ reactPortal }) => reactPortal)
         )
       );
+
+      const playPlaceholder = <View />;
+      const playButton: Result<JSX.Element> = pipe(
+        scaleAndRoot,
+        O.fold(
+          () => E.right(playPlaceholder),
+          (scaleAndRoot): Result<JSX.Element> =>
+            Do(E.either)
+              .bind("scaleAndRoot", scaleAndRoot)
+              .return(({ scaleAndRoot: { root } }) =>
+                pipe(
+                  root.sound,
+                  O.fold(
+                    () => playPlaceholder,
+                    sound => (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setPlay(true);
+                        }}
+                      >
+                        <Svg.Circle
+                          cx={5}
+                          cy={5}
+                          r={5}
+                          strokeWidth={2.5}
+                          stroke="#e74c3c"
+                          fill="#f1c40f"
+                        />
+                      </TouchableOpacity>
+                    )
+                  )
+                )
+              )
+        )
+      );
+
       return pipe(
         Do(E.either)
           .bind("scalePicker", scalePicker)
           .bind("rootPicker", rootPicker)
           .bind("sheetMusic", sheetMusic)
-          .return(({ scalePicker, rootPicker, sheetMusic }) => (
+          .bind("playButton", playButton)
+          .return(({ scalePicker, rootPicker, sheetMusic, playButton }) => (
             <View style={styles.container}>
               <View style={styles.pickers}>
                 {scalePicker}
                 {rootPicker}
               </View>
               <View style={styles.music}>{sheetMusic}</View>
+              <View style={styles.buttonView}>{playButton}</View>
             </View>
           )),
         E.getOrElse((e: string) => (
@@ -268,33 +310,3 @@ export default function App(): JSX.Element {
       );
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "space-around"
-  },
-  error: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%"
-  },
-  picker: {
-    height: "50%"
-  },
-  pickers: {
-    justifyContent: "space-evenly",
-    flex: 1 + Math.sqrt(5),
-    width: "100%"
-  },
-  music: {
-    flex: 2,
-    width: "95%",
-    justifyContent: "flex-start",
-    alignItems: "center"
-  },
-  svg: {}
-});
