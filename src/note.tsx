@@ -147,7 +147,7 @@ export class Root extends Note {
     path: AVPlaybackSource
   ) => () => Audio.Sound.createAsync(path, { shouldPlay: true });
 
-  static rootFromString(
+  static fromString(
     s: string,
     sharpVersion: boolean,
     mp3path: Option<string>

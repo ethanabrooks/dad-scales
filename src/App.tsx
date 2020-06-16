@@ -15,6 +15,7 @@ import * as R from "./result";
 import { MakeResult, Result } from "./result";
 import * as T from "./tresult";
 import { ajv, schema } from "./schema";
+import { task, Task } from "fp-ts/lib/Task";
 
 type Scale = { pattern: number[]; roots: Map<string, Root> };
 
@@ -33,18 +34,21 @@ export function first<T>(seq: Seq.Indexed<T>): Result<T> {
   );
 }
 
-export default function App() {
+type State = { type: "loading" } | { type: "loaded"; dom: JSX.Element };
+
+export default function App(): JSX.Element {
+  const [state, setState] = React.useState<State>({ type: "loading" });
   const [clef, setClef] = React.useState<Clef>("treble");
   const [scale, setScale] = React.useState<Option<string>>(O.some("major"));
   const [root, setRoot] = React.useState<Option<string>>(O.some("c"));
   const [play, setPlay] = React.useState<boolean>(false);
   const sequence = A.array.sequence(TE.taskEither);
-  let scaleMap: T.Result<Map<string, Scale>> = React.useMemo(
+  const scaleMap: T.Result<Map<string, Scale>> = React.useMemo(
     () =>
       pipe(
         E.tryCatch(
           (): [boolean, string] => {
-            let validate = ajv.compile(schema);
+            const validate = ajv.compile(schema);
             const valid = validate(rawScales);
             return [valid, ajv.errorsText(validate.errors)];
           },
@@ -68,32 +72,46 @@ export default function App() {
                     }): T.Result<[string, Root]> =>
                       Do(TE.taskEither)
                         .bind(
-                          "note",
-                          Root.rootFromString(
-                            rootName,
-                            sharp,
-                            O.fromNullable(mp3)
-                          )
+                          "root",
+                          Root.fromString(rootName, sharp, O.fromNullable(mp3))
                         )
-                        .bindL("unicodeString", ({ note }) =>
-                          TE.fromEither(note.unicodeString())
+                        .bindL(
+                          "unicodeString",
+                          ({ root }): T.Result<string> =>
+                            TE.fromEither(root.unicodeString())
                         )
-                        .return(({ note, unicodeString }) => [
-                          unicodeString,
-                          note
-                        ])
+                        .return(
+                          ({ root, unicodeString }): [string, Root] => [
+                            unicodeString,
+                            root
+                          ]
+                        )
                   ),
                   sequence,
-                  TE.map(Map),
+                  TE.map(x => {
+                    console.log(x);
+                    return Map(x);
+                  }),
                   TE.map(roots => [name, { pattern, roots }])
                 )
             )
         ),
-        TE.map(sequence),
+        TE.chain(sequence),
         TE.map(Map)
       ),
     [rawScales]
   );
+
+  React.useEffect(() => {
+    domTask().then(
+      dom => {
+        console.log("accepted");
+        console.log(dom);
+        setState({ type: "loaded", dom });
+      },
+      e => console.log("rejected", e)
+    );
+  });
 
   const clefPicker: JSX.Element = (
     <Picker
@@ -106,103 +124,135 @@ export default function App() {
     </Picker>
   );
 
-  const scalePicker: T.Result<JSX.Element> = Do(TE.taskEither)
-    .bind("scaleMap", scaleMap)
-    .bindL("element", ({ scaleMap }) =>
+  const scalePicker: T.Result<JSX.Element> = pipe(
+    scaleMap,
+    TE.chain(
+      (scaleMap: Map<string, Scale>): T.Result<JSX.Element> =>
+        pipe(
+          first(scaleMap.keySeq()),
+          E.mapLeft((e: string) => e + ": scale names"),
+          E.map(
+            (firstScale: string): JSX.Element => (
+              <Picker
+                style={styles.picker}
+                selectedValue={pipe(
+                  scale,
+                  O.getOrElse(() => firstScale)
+                )}
+                onValueChange={s => setScale(some(s))}
+              >
+                {scaleMap
+                  .keySeq()
+                  .toArray()
+                  .map((scaleName: string) => (
+                    <Picker.Item
+                      label={scaleName}
+                      value={scaleName}
+                      key={scaleName}
+                    />
+                  ))}
+              </Picker>
+            )
+          ),
+          TE.fromEither
+        )
+    )
+  );
+
+  const rootPicker: T.Result<JSX.Element> = pipe(
+    scaleMap,
+    TE.chain(
+      (scaleMap: Map<string, Scale>): T.Result<JSX.Element> =>
+        pipe(
+          scale,
+          O.fold(
+            () => E.right(<View style={styles.picker} />),
+            (scaleKey: string): Result<JSX.Element> =>
+              Do(E.either)
+                .bind("scaleValue", R.lookup(scaleKey, scaleMap))
+                .bindL(
+                  "firstRoot",
+                  ({ scaleValue }): Result<string> =>
+                    pipe(
+                      first(scaleValue.roots.keySeq()),
+                      E.mapLeft(e => e + `: "${scaleKey}" roots`)
+                    )
+                )
+                .return(
+                  ({ firstRoot, scaleValue }): JSX.Element => (
+                    <Picker
+                      style={{ backgroundColor: "white", ...styles.picker }}
+                      selectedValue={pipe(
+                        root,
+                        O.getOrElse(() => firstRoot)
+                      )}
+                      onValueChange={r => setRoot(some(r))}
+                    >
+                      {scaleValue.roots
+                        .keySeq()
+                        .toArray()
+                        .map(r => (
+                          <Picker.Item label={r} value={r} key={r} />
+                        ))}
+                    </Picker>
+                  )
+                )
+          ),
+          TE.fromEither
+        )
+    )
+  );
+  const sheetMusic: T.Result<ReactPortal | null> = pipe(
+    scaleMap,
+    TE.chain(scaleMap =>
       pipe(
-        first(scaleMap.keySeq()),
-        E.mapLeft(e => e + ": scale names"),
-        E.map((firstScale: string) => (
-          <Picker
-            style={styles.picker}
-            selectedValue={pipe(
-              scale,
-              O.getOrElse(() => firstScale)
-            )}
-            onValueChange={s => setScale(some(s))}
-          >
-            {scaleMap
-              .keySeq()
-              .toArray()
-              .map(s => (
-                <Picker.Item label={s} value={s} key={s} />
-              ))}
-          </Picker>
-        )),
+        root,
+        O.fold(
+          () => E.right(null),
+          (rootKey: string): Result<ReactPortal | null> =>
+            Do(E.either)
+              .bind(
+                "scaleKey",
+                pipe(
+                  scale,
+                  MakeResult.fromOption<string>(
+                    `Somehow, scale was none when root was ${root}.`
+                  )
+                )
+              )
+              .bindL(
+                "scaleValue",
+                ({ scaleKey }): Result<Scale> => R.lookup(scaleKey, scaleMap)
+              )
+              .bindL(
+                "rootValue",
+                ({ scaleValue }): Result<Root> =>
+                  R.lookup(rootKey, scaleValue.roots)
+              )
+              .letL(
+                "rootIndex",
+                ({ rootValue }): number => rootValue.getIndex()
+              )
+              .letL(
+                "notes",
+                ({ scaleValue, rootIndex, rootValue }): Note[] =>
+                  scaleValue.pattern
+                    .reduce(modCumSum, { acc: [rootIndex], prev: rootIndex })
+                    .acc.map(v => new Note(v, rootValue.sharp))
+              )
+              .bindL(
+                "reactPortal",
+                ({ notes }): Result<ReactPortal> =>
+                  Music.getContext(notes, clef, styles.svg)
+              )
+              .return(({ reactPortal }) => reactPortal)
+        ),
         TE.fromEither
       )
     )
-    .return(({ element }) => element);
-
-  const rootPicker: Result<JSX.Element> = pipe(
-    scale,
-    O.fold(
-      () => E.right(<View style={styles.picker} />),
-      (scaleKey: string) =>
-        Do(E.either)
-          .bind("scaleMap", scaleMap)
-          .bindL("scaleValue", ({ scaleMap }) => R.lookup(scaleKey, scaleMap))
-          .bindL("firstRoot", ({ scaleValue }) =>
-            pipe(
-              first(scaleValue.roots.keySeq()),
-              E.mapLeft(e => e + `: "${scaleKey}" roots`)
-            )
-          )
-          .return(({ firstRoot, scaleValue }) => (
-            <Picker
-              style={{ backgroundColor: "white", ...styles.picker }}
-              selectedValue={pipe(
-                root,
-                O.getOrElse(() => firstRoot)
-              )}
-              onValueChange={r => setRoot(some(r))}
-            >
-              {scaleValue.roots
-                .keySeq()
-                .toArray()
-                .map(r => (
-                  <Picker.Item label={r} value={r} key={r} />
-                ))}
-            </Picker>
-          ))
-    )
   );
-  const sheetMusic: Result<ReactPortal | null> = pipe(
-    root,
-    O.fold(
-      () => E.right(null),
-      (rootKey: string): Result<ReactPortal | null> =>
-        Do(E.either)
-          .bind("scaleMap", scaleMap)
-          .bind(
-            "scaleKey",
-            pipe(
-              scale,
-              MakeResult.fromOption<string>(
-                `Somehow, scale was none when root was ${root}.`
-              )
-            )
-          )
-          .bindL("scaleValue", ({ scaleKey, scaleMap }) =>
-            R.lookup(scaleKey, scaleMap)
-          )
-          .bindL("rootValue", ({ scaleValue }) =>
-            R.lookup(rootKey, scaleValue.roots)
-          )
-          .letL("rootIndex", ({ rootValue }) => rootValue.getIndex())
-          .letL("notes", ({ scaleValue, rootIndex, rootValue }) =>
-            scaleValue.pattern
-              .reduce(modCumSum, { acc: [rootIndex], prev: rootIndex })
-              .acc.map(v => new Note(v, rootValue.sharp))
-          )
-          .bindL("reactPortal", ({ notes }) =>
-            Music.getContext(notes, clef, styles.svg)
-          )
-          .return(({ reactPortal }) => reactPortal)
-    )
-  );
-  return pipe(
-    Do(E.either)
+  const domTask: Task<JSX.Element> = pipe(
+    Do(TE.taskEither)
       .bind("scalePicker", scalePicker)
       .bind("rootPicker", rootPicker)
       .bind("sheetMusic", sheetMusic)
@@ -215,14 +265,26 @@ export default function App() {
           <View style={styles.music}>{sheetMusic}</View>
         </View>
       )),
-    E.getOrElse((e: string) => (
-      <View style={styles.error}>
-        <Text style={{ fontWeight: "bold" }}>Error!</Text>
-        <Text>🙀</Text>
-        <Text style={{ textAlign: "center" }}>{e}</Text>
-      </View>
-    ))
+    TE.getOrElse((e: string) =>
+      task.of(
+        <View style={styles.error}>
+          <Text style={{ fontWeight: "bold" }}>Error!</Text>
+          <Text>🙀</Text>
+          <Text style={{ textAlign: "center" }}>{e}</Text>
+        </View>
+      )
+    )
   );
+  switch (state.type) {
+    case "loading":
+      return (
+        <View>
+          <Text>Loading...</Text>
+        </View>
+      );
+    case "loaded":
+      return state.dom;
+  }
 }
 
 const styles = StyleSheet.create({
