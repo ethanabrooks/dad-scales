@@ -38,9 +38,9 @@ export const styles = StyleSheet.create({
     backgroundColor: "yellow"
   },
   buttonView: {
-    flex: 4,
-    justifyContent: "center",
-    alignItems: "center",
+    flex: 1,
+    height: 10,
+    width: 50,
     backgroundColor: "blue"
   }
 });

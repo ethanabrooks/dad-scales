@@ -1,5 +1,12 @@
 import React, { ReactPortal } from "react";
-import { Button, Picker, Text, TouchableOpacity, View } from "react-native";
+import {
+  Button,
+  Picker,
+  Text,
+  TouchableOpacity,
+  View,
+  StyleSheet
+} from "react-native";
 import rawScales from "../scales.json";
 import { Note, NUM_TONES, Root } from "./note";
 import { Map, Seq } from "immutable";
@@ -16,7 +23,7 @@ import { MakeResult, Result } from "./result";
 import * as T from "./tresult";
 import { ajv, schema } from "./schema";
 import { styles } from "./styles";
-import { Svg } from "expo";
+import Svg, { Circle, Polygon, Rect } from "react-native-svg";
 
 type Scale = { pattern: number[]; roots: Map<string, Root> };
 type State =
@@ -249,11 +256,39 @@ export default function App(): JSX.Element {
         )
       );
 
-      const playPlaceholder = <View />;
-      const playButton: Result<JSX.Element> = pipe(
+      const placeholder = (
+        <View style={[StyleSheet.absoluteFill, styles.button]} />
+      );
+      // <View style={styles.buttonView} />;
+      const play = (
+        <View style={[StyleSheet.absoluteFill, styles.button]}>
+          <TouchableOpacity>
+            <Svg height="50%" width="50%" viewBox="0 0 100 100">
+              <Polygon points="0,0 50,30 0,60" />{" "}
+            </Svg>
+          </TouchableOpacity>
+        </View>
+      );
+      const pause = (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            { alignItems: "center", justifyContent: "center" }
+          ]}
+        >
+          <TouchableOpacity>
+            <Svg height="50%" width="50%" viewBox="0 0 100 100">
+              <Polygon points="0,0 15,0 15,60 0,60" />
+              <Polygon points="25,0 40,0 40,60 25,60" />
+            </Svg>
+          </TouchableOpacity>
+        </View>
+      );
+
+      const playPauseButton: Result<JSX.Element> = pipe(
         scaleAndRoot,
         O.fold(
-          () => E.right(playPlaceholder),
+          () => E.right(placeholder),
           (scaleAndRoot): Result<JSX.Element> =>
             Do(E.either)
               .bind("scaleAndRoot", scaleAndRoot)
@@ -261,21 +296,14 @@ export default function App(): JSX.Element {
                 pipe(
                   root.sound,
                   O.fold(
-                    () => playPlaceholder,
+                    () => placeholder,
                     sound => (
                       <TouchableOpacity
                         onPress={() => {
                           setPlay(true);
                         }}
                       >
-                        <Svg.Circle
-                          cx={5}
-                          cy={5}
-                          r={5}
-                          strokeWidth={2.5}
-                          stroke="#e74c3c"
-                          fill="#f1c40f"
-                        />
+                        {play}
                       </TouchableOpacity>
                     )
                   )
@@ -289,7 +317,7 @@ export default function App(): JSX.Element {
           .bind("scalePicker", scalePicker)
           .bind("rootPicker", rootPicker)
           .bind("sheetMusic", sheetMusic)
-          .bind("playButton", playButton)
+          .bind("playButton", playPauseButton)
           .return(({ scalePicker, rootPicker, sheetMusic, playButton }) => (
             <View style={styles.container}>
               <View style={styles.pickers}>
@@ -297,7 +325,7 @@ export default function App(): JSX.Element {
                 {rootPicker}
               </View>
               <View style={styles.music}>{sheetMusic}</View>
-              <View style={styles.buttonView}>{playButton}</View>
+              {playButton}
             </View>
           )),
         E.getOrElse((e: string) => (
