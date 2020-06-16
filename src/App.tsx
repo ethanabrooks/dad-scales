@@ -23,7 +23,7 @@ import { MakeResult, Result } from "./result";
 import * as T from "./tresult";
 import { ajv, schema } from "./schema";
 import { styles } from "./styles";
-import Svg, { Circle, Polygon, Rect } from "react-native-svg";
+import Svg, { Circle, G, Polygon, Rect } from "react-native-svg";
 
 type Scale = { pattern: number[]; roots: Map<string, Root> };
 type State =
@@ -49,7 +49,7 @@ export default function App(): JSX.Element {
   const [state, setState] = React.useState<State>({ type: "loading" });
   const [clef, setClef] = React.useState<Clef>("treble");
   const [scaleName, setScale] = React.useState<Option<string>>(O.some("major"));
-  const [rootName, setRoot] = React.useState<Option<string>>(O.some("c"));
+  const [rootName, setRoot] = React.useState<Option<string>>(O.some("g♯"));
   const [play, setPlay] = React.useState<boolean>(false);
   const sequence = A.array.sequence(TE.taskEither);
   const scaleMapTask: T.Result<Map<string, Scale>> = pipe(
@@ -260,28 +260,24 @@ export default function App(): JSX.Element {
         <View style={[StyleSheet.absoluteFill, styles.button]} />
       );
       // <View style={styles.buttonView} />;
-      const play = (
+      const playButton = (
         <View style={[StyleSheet.absoluteFill, styles.button]}>
-          <TouchableOpacity>
-            <Svg height="50%" width="50%" viewBox="0 0 100 100">
-              <Polygon points="0,0 50,30 0,60" />{" "}
-            </Svg>
-          </TouchableOpacity>
+          <Svg height="50%" width="50%" viewBox="0 0 100 100">
+            <Polygon
+              points="0,0 50,30 0,60"
+              onPress={() => alert("Press play")}
+            />{" "}
+          </Svg>
         </View>
       );
-      const pause = (
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            { alignItems: "center", justifyContent: "center" }
-          ]}
-        >
-          <TouchableOpacity>
-            <Svg height="50%" width="50%" viewBox="0 0 100 100">
+      const pauseButton = (
+        <View style={[StyleSheet.absoluteFill, styles.button]}>
+          <Svg height="50%" width="50%" viewBox="0 0 100 100">
+            <G onPress={() => alert("Press pause")}>
               <Polygon points="0,0 15,0 15,60 0,60" />
               <Polygon points="25,0 40,0 40,60 25,60" />
-            </Svg>
-          </TouchableOpacity>
+            </G>
+          </Svg>
         </View>
       );
 
@@ -295,18 +291,7 @@ export default function App(): JSX.Element {
               .return(({ scaleAndRoot: { root } }) =>
                 pipe(
                   root.sound,
-                  O.fold(
-                    () => placeholder,
-                    sound => (
-                      <TouchableOpacity
-                        onPress={() => {
-                          setPlay(true);
-                        }}
-                      >
-                        {play}
-                      </TouchableOpacity>
-                    )
-                  )
+                  O.fold(() => placeholder, sound => pauseButton)
                 )
               )
         )
