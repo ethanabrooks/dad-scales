@@ -39,49 +39,59 @@ export default function App() {
   const [root, setRoot] = React.useState<Option<string>>(O.some("c"));
   const [play, setPlay] = React.useState<boolean>(false);
   const sequence = A.array.sequence(TE.taskEither);
-  const scaleMap: T.Result<Map<string, Scale>> = React.useMemo(
+  let scaleMap: T.Result<Map<string, Scale>> = React.useMemo(
     () =>
-      Do(TE.taskEither)
-        .bind(
-          "validationResult",
-          TE.fromEither(
-            E.tryCatch(
-              () => {
-                let validate = ajv.compile(schema);
-                const valid = validate(rawScales);
-                return [valid, ajv.errorsText(validate.errors)];
-              },
-              e => `${e}`
+      pipe(
+        E.tryCatch(
+          (): [boolean, string] => {
+            let validate = ajv.compile(schema);
+            const valid = validate(rawScales);
+            return [valid, ajv.errorsText(validate.errors)];
+          },
+          e => `${e}`
+        ),
+        E.map(
+          ([valid, error]: [boolean, string]): Result<null> =>
+            valid ? E.right(null) : E.left(error)
+        ),
+        TE.fromEither,
+        TE.map(
+          (): T.Result<[string, Scale]>[] =>
+            rawScales.map(
+              ({ name, pattern, roots }): T.Result<[string, Scale]> =>
+                pipe(
+                  roots.map(
+                    ({
+                      name: rootName,
+                      sharp,
+                      mp3
+                    }): T.Result<[string, Root]> =>
+                      Do(TE.taskEither)
+                        .bind(
+                          "note",
+                          Root.rootFromString(
+                            rootName,
+                            sharp,
+                            O.fromNullable(mp3)
+                          )
+                        )
+                        .bindL("unicodeString", ({ note }) =>
+                          TE.fromEither(note.unicodeString())
+                        )
+                        .return(({ note, unicodeString }) => [
+                          unicodeString,
+                          note
+                        ])
+                  ),
+                  sequence,
+                  TE.map(Map),
+                  TE.map(roots => [name, { pattern, roots }])
+                )
             )
-          )
-        )
-        .bindL("guard", ({ validationResult: [valid, error] }) =>
-          valid ? TE.right(null) : TE.left(error)
-        )
-        .let(
-          "scalePairs",
-          rawScales.map(
-            ({ name, pattern, roots }): T.Result<[string, Scale]> => {
-              let pairs: T.Result<[string, Root]>[] = roots.map(
-                ({ name: rootName, sharp, mp3 }): T.Result<[string, Root]> =>
-                  Do(TE.taskEither)
-                    .bind(
-                      "note",
-                      Root.rootFromString(rootName, sharp, O.fromNullable(mp3))
-                    )
-                    .bindL("unicodeString", ({ note }) =>
-                      TE.fromEither(note.unicodeString())
-                    )
-                    .return(({ note, unicodeString }) => [unicodeString, note])
-              );
-              return Do(TE.taskEither)
-                .bind("pairs", sequence(pairs))
-                .return(({ pairs }) => [name, { pattern, roots: Map(pairs) }]);
-            }
-          )
-        )
-        .bindL("filtered", ({ scalePairs }) => sequence(scalePairs))
-        .return(({ filtered }) => Map(filtered)),
+        ),
+        TE.map(sequence),
+        TE.map(Map)
+      ),
     [rawScales]
   );
 
@@ -96,9 +106,9 @@ export default function App() {
     </Picker>
   );
 
-  const scalePicker: T.Result<JSX.Element> = pipe(
-    scaleMap,
-    TE.map((scaleMap: Map<string, Scale>) =>
+  const scalePicker: T.Result<JSX.Element> = Do(TE.taskEither)
+    .bind("scaleMap", scaleMap)
+    .bindL("element", ({ scaleMap }) =>
       pipe(
         first(scaleMap.keySeq()),
         E.mapLeft(e => e + ": scale names"),
@@ -118,12 +128,11 @@ export default function App() {
                 <Picker.Item label={s} value={s} key={s} />
               ))}
           </Picker>
-        ))
+        )),
+        TE.fromEither
       )
-    ),
-    TE.map(TE.fromEither),
-    TE.flatten
-  );
+    )
+    .return(({ element }) => element);
 
   const rootPicker: Result<JSX.Element> = pipe(
     scale,
