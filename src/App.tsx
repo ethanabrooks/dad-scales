@@ -1,12 +1,5 @@
 import React, { ReactPortal } from "react";
-import {
-  Button,
-  Picker,
-  Text,
-  TouchableOpacity,
-  View,
-  StyleSheet
-} from "react-native";
+import { Picker, StyleSheet, Text, View } from "react-native";
 import rawScales from "../scales.json";
 import { Note, NUM_TONES, Root } from "./note";
 import { Map, Seq } from "immutable";
@@ -23,7 +16,7 @@ import { MakeResult, Result } from "./result";
 import * as T from "./tresult";
 import { ajv, schema } from "./schema";
 import { styles } from "./styles";
-import Svg, { Circle, G, Polygon, Rect } from "react-native-svg";
+import Svg, { G, Polygon } from "react-native-svg";
 
 type Scale = { pattern: number[]; roots: Map<string, Root> };
 type State =
@@ -260,33 +253,6 @@ export default function App(): JSX.Element {
         <View style={[StyleSheet.absoluteFill, styles.button]} />
       );
       // <View style={styles.buttonView} />;
-      const playButton = (
-        <View style={[StyleSheet.absoluteFill, styles.button]}>
-          <Svg height="50%" width="50%" viewBox="0 0 100 100">
-            <Polygon
-              points="0,0 50,30 0,60"
-              onPress={() => {
-                setPlay(true);
-              }}
-            />{" "}
-          </Svg>
-        </View>
-      );
-      const pauseButton = (
-        <View style={[StyleSheet.absoluteFill, styles.button]}>
-          <Svg height="50%" width="50%" viewBox="0 0 100 100">
-            <G
-              onPress={() => {
-                setPlay(false);
-              }}
-            >
-              <Polygon points="0,0 15,0 15,60 0,60" />
-              <Polygon points="25,0 40,0 40,60 25,60" />
-            </G>
-          </Svg>
-        </View>
-      );
-
       const playPauseButton: Result<JSX.Element> = pipe(
         scaleAndRoot,
         O.fold(
@@ -299,7 +265,33 @@ export default function App(): JSX.Element {
                   root.sound,
                   O.fold(
                     () => placeholder,
-                    sound => (play ? pauseButton : playButton)
+                    sound =>
+                      play ? (
+                        <View style={[StyleSheet.absoluteFill, styles.button]}>
+                          <Svg height="50%" width="50%" viewBox="0 0 100 100">
+                            <G
+                              onPress={() => {
+                                setPlay(false);
+                              }}
+                            >
+                              <Polygon points="0,0 15,0 15,60 0,60" />
+                              <Polygon points="25,0 40,0 40,60 25,60" />
+                            </G>
+                          </Svg>
+                        </View>
+                      ) : (
+                        <View style={[StyleSheet.absoluteFill, styles.button]}>
+                          <Svg height="50%" width="50%" viewBox="0 0 100 100">
+                            <Polygon
+                              points="0,0 50,30 0,60"
+                              onPress={() => {
+                                sound.playAsync();
+                                setPlay(true);
+                              }}
+                            />{" "}
+                          </Svg>
+                        </View>
+                      )
                   )
                 )
               )

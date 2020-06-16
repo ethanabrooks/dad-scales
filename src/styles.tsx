@@ -35,7 +35,7 @@ export const styles = StyleSheet.create({
     width: 50,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "yellow"
+    backgroundColor: "white"
   },
   buttonView: {
     flex: 1,

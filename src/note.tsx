@@ -145,7 +145,7 @@ export class Root extends Note {
 
   static getSoundThunk: (path: AVPlaybackSource) => Lazy<Promise<Created>> = (
     path: AVPlaybackSource
-  ) => () => Audio.Sound.createAsync(path, { shouldPlay: true });
+  ) => () => Audio.Sound.createAsync(path, { shouldPlay: false });
 
   static fromString(
     s: string,
