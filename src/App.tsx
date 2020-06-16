@@ -265,7 +265,9 @@ export default function App(): JSX.Element {
           <Svg height="50%" width="50%" viewBox="0 0 100 100">
             <Polygon
               points="0,0 50,30 0,60"
-              onPress={() => alert("Press play")}
+              onPress={() => {
+                setPlay(true);
+              }}
             />{" "}
           </Svg>
         </View>
@@ -273,7 +275,11 @@ export default function App(): JSX.Element {
       const pauseButton = (
         <View style={[StyleSheet.absoluteFill, styles.button]}>
           <Svg height="50%" width="50%" viewBox="0 0 100 100">
-            <G onPress={() => alert("Press pause")}>
+            <G
+              onPress={() => {
+                setPlay(false);
+              }}
+            >
               <Polygon points="0,0 15,0 15,60 0,60" />
               <Polygon points="25,0 40,0 40,60 25,60" />
             </G>
@@ -291,7 +297,10 @@ export default function App(): JSX.Element {
               .return(({ scaleAndRoot: { root } }) =>
                 pipe(
                   root.sound,
-                  O.fold(() => placeholder, sound => pauseButton)
+                  O.fold(
+                    () => placeholder,
+                    sound => (play ? pauseButton : playButton)
+                  )
                 )
               )
         )
