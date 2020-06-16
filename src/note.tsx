@@ -147,10 +147,6 @@ export class Root extends Note {
     path: AVPlaybackSource
   ) => () => Audio.Sound.createAsync(path, { shouldPlay: true });
 
-  static async createPlaybackObject(uri: AVPlaybackSource) {
-    const playbackObject = await Sound.createAsync(uri, { shouldPlay: false });
-  }
-
   static rootFromString(
     s: string,
     sharpVersion: boolean,

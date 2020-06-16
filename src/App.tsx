@@ -10,8 +10,10 @@ import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import { Do } from "fp-ts-contrib/lib/Do";
 import { Clef, Music } from "./music";
+import * as TE from "fp-ts/lib/TaskEither";
 import * as R from "./result";
 import { MakeResult, Result } from "./result";
+import * as T from "./tresult";
 import { ajv, schema } from "./schema";
 
 type Scale = { pattern: number[]; roots: Map<string, Root> };
@@ -36,39 +38,43 @@ export default function App() {
   const [scale, setScale] = React.useState<Option<string>>(O.some("major"));
   const [root, setRoot] = React.useState<Option<string>>(O.some("c"));
   const [play, setPlay] = React.useState<boolean>(false);
-  const sequence = A.array.sequence(E.either);
-  const scaleMap: Result<Map<string, Scale>> = React.useMemo(
+  const sequence = A.array.sequence(TE.taskEither);
+  const scaleMap: T.Result<Map<string, Scale>> = React.useMemo(
     () =>
-      Do(E.either)
+      Do(TE.taskEither)
         .bind(
           "validationResult",
-          E.tryCatch(
-            () => {
-              let validate = ajv.compile(schema);
-              const valid = validate(rawScales);
-              return [valid, ajv.errorsText(validate.errors)];
-            },
-            e => `${e}`
+          TE.fromEither(
+            E.tryCatch(
+              () => {
+                let validate = ajv.compile(schema);
+                const valid = validate(rawScales);
+                return [valid, ajv.errorsText(validate.errors)];
+              },
+              e => `${e}`
+            )
           )
         )
         .bindL("guard", ({ validationResult: [valid, error] }) =>
-          valid ? E.right(null) : E.left(error)
+          valid ? TE.right(null) : TE.left(error)
         )
         .let(
           "scalePairs",
           rawScales.map(
-            ({ name, pattern, roots }): Result<[string, Scale]> => {
-              let pairs: Result<[string, Root]>[] = roots.map(
-                ({ name: rootName, sharp, mp3 }): Result<[string, Root]> =>
-                  Do(E.either)
+            ({ name, pattern, roots }): T.Result<[string, Scale]> => {
+              let pairs: T.Result<[string, Root]>[] = roots.map(
+                ({ name: rootName, sharp, mp3 }): T.Result<[string, Root]> =>
+                  Do(TE.taskEither)
                     .bind(
                       "note",
                       Root.rootFromString(rootName, sharp, O.fromNullable(mp3))
                     )
-                    .bindL("unicodeString", ({ note }) => note.unicodeString())
+                    .bindL("unicodeString", ({ note }) =>
+                      TE.fromEither(note.unicodeString())
+                    )
                     .return(({ note, unicodeString }) => [unicodeString, note])
               );
-              return Do(E.either)
+              return Do(TE.taskEither)
                 .bind("pairs", sequence(pairs))
                 .return(({ pairs }) => [name, { pattern, roots: Map(pairs) }]);
             }
@@ -90,39 +96,34 @@ export default function App() {
     </Picker>
   );
 
-  const scalePicker: Result<JSX.Element> = Do(E.either)
-    .bind("scaleMap", scaleMap)
-    .bindL("firstScale", ({ scaleMap }) =>
+  const scalePicker: T.Result<JSX.Element> = pipe(
+    scaleMap,
+    TE.map((scaleMap: Map<string, Scale>) =>
       pipe(
         first(scaleMap.keySeq()),
-        E.mapLeft(e => e + ": scale names")
+        E.mapLeft(e => e + ": scale names"),
+        E.map((firstScale: string) => (
+          <Picker
+            style={styles.picker}
+            selectedValue={pipe(
+              scale,
+              O.getOrElse(() => firstScale)
+            )}
+            onValueChange={s => setScale(some(s))}
+          >
+            {scaleMap
+              .keySeq()
+              .toArray()
+              .map(s => (
+                <Picker.Item label={s} value={s} key={s} />
+              ))}
+          </Picker>
+        ))
       )
-    )
-    .return(
-      ({
-        scaleMap,
-        firstScale
-      }: {
-        scaleMap: Map<string, Scale>;
-        firstScale: string;
-      }) => (
-        <Picker
-          style={styles.picker}
-          selectedValue={pipe(
-            scale,
-            O.getOrElse(() => firstScale)
-          )}
-          onValueChange={s => setScale(some(s))}
-        >
-          {scaleMap
-            .keySeq()
-            .toArray()
-            .map(s => (
-              <Picker.Item label={s} value={s} key={s} />
-            ))}
-        </Picker>
-      )
-    );
+    ),
+    TE.map(TE.fromEither),
+    TE.flatten
+  );
 
   const rootPicker: Result<JSX.Element> = pipe(
     scale,
