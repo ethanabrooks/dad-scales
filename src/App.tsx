@@ -22,7 +22,8 @@ const TIMEOUT = 2000;
 type Scale = { pattern: number[]; roots: Map<string, Root> };
 type State =
   | { type: "loading" }
-  | { type: "loaded"; scaleMap: Result<Map<string, Scale>> };
+  | { type: "loaded"; scaleMap: Result<Map<string, Scale>> }
+  | { type: "error"; message: string };
 
 function modCumSum(
   { acc, prev }: { acc: number[]; prev: number },
@@ -104,12 +105,20 @@ export default function App(): JSX.Element {
         scaleMap => {
           setState({ type: "loaded", scaleMap });
         },
-        e => console.log("rejected", e)
+        e => setState({ type: "error", message: `${e}` })
       );
     }
   });
 
   switch (state.type) {
+    case "error":
+      return (
+        <View style={styles.error}>
+          <Text style={{ fontWeight: "bold" }}>Error!</Text>
+          <Text>🙀</Text>
+          <Text style={{ textAlign: "center" }}>{state.message}</Text>
+        </View>
+      );
     case "loading":
       return (
         <View>
@@ -375,13 +384,14 @@ export default function App(): JSX.Element {
               <View style={styles.music}>{sheetMusic}</View>
             </View>
           )),
-        E.getOrElse((e: string) => (
-          <View style={styles.error}>
-            <Text style={{ fontWeight: "bold" }}>Error!</Text>
-            <Text>🙀</Text>
-            <Text style={{ textAlign: "center" }}>{e}</Text>
-          </View>
-        ))
+        E.getOrElse((e: string) => {
+          setState({ type: "error", message: `${e}` });
+          return (
+            <View style={styles.error}>
+              <Text>Loading error...</Text>
+            </View>
+          );
+        })
       );
   }
 }

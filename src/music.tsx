@@ -34,14 +34,12 @@ export class Music {
         case "treble":
           return 4;
         case "bass":
-          return 2;
+          return notes[0].getIndex() < 3 ? 3 : 2;
       }
     };
     const octaves = pipe(
       A.zip(indices, indices.slice(1)),
-      A.scanLeft(startingOctave(), (o, [i1, i2]) => {
-        return i1 < i2 ? o : o + 1;
-      })
+      A.scanLeft(startingOctave(), (o, [i1, i2]) => (i1 < i2 ? o : o + 1))
     );
     const staveNotes: Result<Vex.Flow.StaveNote>[] = A.zipWith(
       notes,
