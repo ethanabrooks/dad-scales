@@ -1,6 +1,5 @@
 import { Range } from "immutable";
 import Vex from "vexflow";
-import { ReactNativeSVGContext } from "./ReactNativeSVGContext";
 import { Note, NUM_TONES } from "./note";
 import { Do } from "fp-ts-contrib/lib/Do";
 import { MakeResult, Result } from "./result";
@@ -9,6 +8,10 @@ import * as O from "fp-ts/lib/Option";
 import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import { ReactPortal } from "react";
+import {
+  NotoFontPack,
+  ReactNativeSVGContext
+} from "standalone-vexflow-context";
 
 export type Clef = "bass" | "treble";
 
@@ -117,7 +120,7 @@ export class Music {
     clef: Clef,
     style: { width: number; height: number }
   ) {
-    this.context = new ReactNativeSVGContext(style);
+    this.context = new ReactNativeSVGContext(NotoFontPack, style);
     const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 300);
     // Create the staves
 
