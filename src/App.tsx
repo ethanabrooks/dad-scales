@@ -280,7 +280,7 @@ export default function App(): JSX.Element {
                           style={styles.button}
                           onPress={onPressPause}
                         >
-                          <Svg height="100%" width="100%" viewBox="0 0 75 75">
+                          <Svg height="80%" width="100%" viewBox="0 0 35 70">
                             <G onPress={onPressPause}>
                               <Polygon points="0,0 15,0 15,60 0,60" />
                               <Polygon points="25,0 40,0 40,60 25,60" />
@@ -292,7 +292,7 @@ export default function App(): JSX.Element {
                           style={styles.button}
                           onPress={onPressPlay}
                         >
-                          <Svg height="100%" width="100%" viewBox="0 0 75 75">
+                          <Svg height="80%" width="100%" viewBox="0 0 35 70">
                             <Polygon
                               points="0,0 50,30 0,60"
                               onPress={onPressPlay}
@@ -315,12 +315,10 @@ export default function App(): JSX.Element {
           .bind("playButton", playPauseButton)
           .return(({ scalePicker, rootPicker, sheetMusic, playButton }) => (
             <View style={styles.container}>
-              <View style={styles.pickers}>
-                {scalePicker}
-                {rootPicker}
-              </View>
-              <View style={styles.music}>{sheetMusic}</View>
+              <View style={styles.picker}>{scalePicker}</View>
+              <View style={styles.picker}>{rootPicker}</View>
               <View style={styles.button}>{playButton}</View>
+              <View style={styles.music}>{sheetMusic}</View>
             </View>
           )),
         E.getOrElse((e: string) => (

@@ -14,27 +14,24 @@ export const styles = StyleSheet.create({
     width: "100%"
   },
   picker: {
-    height: "50%"
-  },
-  pickers: {
     justifyContent: "space-evenly",
-    flex: 1 + Math.sqrt(5),
+    flex: 3,
     width: "100%"
   },
   music: {
-    flex: 1,
-    width: "95%",
+    flex: 2,
+    width: "100%",
     justifyContent: "space-around",
     alignItems: "center"
   },
-  svg: {},
-
+  svg: {
+    height: "100%",
+    width: "95%"
+  },
   button: {
     flex: 1,
-    height: 50,
-    width: 50,
+    width: "100%",
     justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "yellow"
+    alignItems: "center"
   }
 });
