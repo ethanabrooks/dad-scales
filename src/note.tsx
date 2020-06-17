@@ -32,8 +32,6 @@ export const toneStrings: { sharp: string; flat: string }[] = [
   { sharp: "b", flat: "b" }
 ];
 
-const ix = Array.from(Array(toneStrings.length).keys());
-
 export const NUM_TONES = toneStrings.length;
 
 const tones: { sharp: Tone; flat: Tone }[] = toneStrings.map(
@@ -64,10 +62,9 @@ export class Note {
   }
 
   static indexFromString(s: string, sharpVersion: boolean): Result<number> {
-    let stringList = List(toneStrings).map(({ sharp, flat }) =>
-      sharpVersion ? sharp : flat
+    let searchResult = List(toneStrings).findIndex(({ sharp, flat }) =>
+      [sharp, flat].includes(s)
     );
-    const searchResult: number = stringList.findIndex(s1 => s == s1);
     const checkResult = E.fromPredicate(
       (r: number) => r >= 0,
       () =>
