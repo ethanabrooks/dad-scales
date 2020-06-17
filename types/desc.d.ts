@@ -3,8 +3,10 @@ declare module "standalone-vexflow-context" {
   import { Vex } from "./vexflow";
 
   export const NotoFontPack: { getFont: NamedStyles<Font> };
+  type SVGContextStyle = { width?: string | number; height?: string | number };
+
   export class ReactNativeSVGContext extends Vex.Flow.SVGContext {
-    constructor(type: NotoFontPack, type: { width?: number; height?: number });
+    constructor(type: NotoFontPack, type: SVGContextStyle);
     constructor(element: HTMLElement);
     svg: SVGElement;
     state: any;

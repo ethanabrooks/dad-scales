@@ -7,13 +7,12 @@ import * as TE from "fp-ts/lib/TaskEither";
 
 import { pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";
-import * as T from "./tResult";
-import { MakeResult, Result } from "./result";
+import { MakeResult, Result, TaskResult } from "./result";
 import { Do } from "fp-ts-contrib/lib/Do";
 import { Sound } from "expo-av/build/Audio/Sound";
 import { AVPlaybackSource } from "expo-av/build/AV";
 import { Audio, AVPlaybackStatus } from "expo-av";
-import * as Task from "fp-ts/lib/Task";
+import * as T from "fp-ts/lib/Task";
 import { withTimeout } from "fp-ts-contrib/lib/Task/withTimeout";
 
 type Accidental = "#" | "b" | null;
@@ -141,7 +140,7 @@ export class Root extends Note {
     this.sound = sound;
   }
 
-  static getSoundTask: (path: AVPlaybackSource) => Task.Task<Created> = (
+  static getSoundTask: (path: AVPlaybackSource) => T.Task<Created> = (
     path: AVPlaybackSource
   ) => () => Audio.Sound.createAsync(path, { shouldPlay: false });
 
@@ -150,7 +149,7 @@ export class Root extends Note {
     sharpVersion: boolean,
     mp3path: Option<string>,
     timeout: number
-  ): T.Result<Root> {
+  ): TaskResult<Root> {
     return Do(TE.taskEither)
       .bind("index", TE.fromEither(Note.indexFromString(s, sharpVersion)))
       .bind(
@@ -159,12 +158,15 @@ export class Root extends Note {
           mp3path,
           O.fold(
             () => TE.right(O.none),
-            (mp3path: string): T.Result<Option<Sound>> =>
+            (mp3path: string): TaskResult<Option<Sound>> =>
               pipe(
                 Root.getSoundTask({ uri: mp3path }),
-                Task.map(({ sound }) => sound),
-                Task.map(E.right),
-                withTimeout(E.left("timed out"), timeout),
+                T.map(({ sound }) => sound),
+                T.map(E.right),
+                withTimeout(
+                  E.left(`Timed out while retrieving audio from ${mp3path}`),
+                  timeout
+                ),
                 TE.map(O.some)
               )
           )

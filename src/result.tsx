@@ -4,6 +4,7 @@ import { Lazy, pipe } from "fp-ts/lib/function";
 import * as O from "fp-ts/lib/Option";
 import { Option } from "fp-ts/lib/Option";
 import { Map } from "immutable";
+import { TaskEither } from "fp-ts/lib/TaskEither";
 
 export type Result<T> = Either<string, T>;
 
@@ -52,3 +53,5 @@ export function lookup<K, V>(key: K, map: Map<K, V>): Result<V> {
     MakeResult.fromOption(`Failed to get key ${key} from map: ${map}`)
   );
 }
+
+export type TaskResult<T> = TaskEither<string, T>;

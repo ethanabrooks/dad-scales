@@ -10,19 +10,18 @@ import { pipe } from "fp-ts/lib/function";
 import { ReactPortal } from "react";
 import {
   NotoFontPack,
-  ReactNativeSVGContext
+  ReactNativeSVGContext,
+  SVGContextStyle
 } from "standalone-vexflow-context";
 
 export type Clef = "bass" | "treble";
-
-type Style = { width: string; height: string };
 
 export class Music {
   context: ReactNativeSVGContext;
   static getContext(
     notes: Note[],
     clef: Clef,
-    style: Style
+    style: SVGContextStyle
   ): Result<ReactPortal> {
     const sequence = A.array.sequence(E.either);
     const numNotes = Range(0, Infinity)
@@ -115,11 +114,7 @@ export class Music {
       )
       .return(({ reactPortal }) => reactPortal);
   }
-  constructor(
-    scale: Vex.Flow.StaveNote[],
-    clef: Clef,
-    style: { width: number; height: number }
-  ) {
+  constructor(scale: Vex.Flow.StaveNote[], clef: Clef, style: SVGContextStyle) {
     this.context = new ReactNativeSVGContext(NotoFontPack, style);
     const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 300);
     // Create the staves

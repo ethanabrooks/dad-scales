@@ -1,12 +1,5 @@
 import React, { ReactPortal } from "react";
-import {
-  Picker,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View
-} from "react-native";
+import { Picker, Switch, Text, TouchableOpacity, View } from "react-native";
 import rawScales from "../scales.json";
 import { Note, NUM_TONES, Root } from "./note";
 import { Map, Seq } from "immutable";
@@ -19,11 +12,12 @@ import { Do } from "fp-ts-contrib/lib/Do";
 import { Clef, Music } from "./music";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as R from "./result";
-import { MakeResult, Result } from "./result";
-import * as T from "./tResult";
+import { MakeResult, Result, TaskResult } from "./result";
 import { ajv, schema } from "./schema";
 import { styles } from "./styles";
 import Svg, { G, Polygon } from "react-native-svg";
+
+const TIMEOUT = 1000;
 
 type Scale = { pattern: number[]; roots: Map<string, Root> };
 type State =
@@ -52,7 +46,7 @@ export default function App(): JSX.Element {
   const [rootName, setRoot] = React.useState<Option<string>>(O.some("g♯"));
   const [play, setPlay] = React.useState<boolean>(false);
   const sequence = A.array.sequence(TE.taskEither);
-  const scaleMapTask: T.Result<Map<string, Scale>> = pipe(
+  const scaleMapTask: TaskResult<Map<string, Scale>> = pipe(
     E.tryCatch(
       (): [boolean, string] => {
         const validate = ajv.compile(schema);
@@ -67,20 +61,25 @@ export default function App(): JSX.Element {
     ),
     TE.fromEither,
     TE.map(
-      (): T.Result<[string, Scale]>[] =>
+      (): TaskResult<[string, Scale]>[] =>
         rawScales.map(
-          ({ name, pattern, roots }): T.Result<[string, Scale]> =>
+          ({ name, pattern, roots }): TaskResult<[string, Scale]> =>
             pipe(
               roots.map(
-                ({ name: rootName, sharp, mp3 }): T.Result<[string, Root]> =>
+                ({ name: rootName, sharp, mp3 }): TaskResult<[string, Root]> =>
                   Do(TE.taskEither)
                     .bind(
                       "root",
-                      Root.fromString(rootName, sharp, O.fromNullable(mp3))
+                      Root.fromString(
+                        rootName,
+                        sharp,
+                        O.fromNullable(mp3),
+                        TIMEOUT
+                      )
                     )
                     .bindL(
                       "unicodeString",
-                      ({ root }): T.Result<string> =>
+                      ({ root }): TaskResult<string> =>
                         TE.fromEither(root.unicodeString())
                     )
                     .return(
