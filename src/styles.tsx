@@ -24,7 +24,7 @@ export const styles = StyleSheet.create({
   music: {
     flex: 1,
     width: "95%",
-    justifyContent: "flex-start",
+    justifyContent: "space-around",
     alignItems: "center"
   },
   svg: {},
@@ -35,12 +35,6 @@ export const styles = StyleSheet.create({
     width: 50,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "white"
-  },
-  buttonView: {
-    flex: 1,
-    height: 10,
-    width: 50,
-    backgroundColor: "blue"
+    backgroundColor: "green"
   }
 });

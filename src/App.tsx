@@ -252,7 +252,6 @@ export default function App(): JSX.Element {
       const placeholder = (
         <View style={[StyleSheet.absoluteFill, styles.button]} />
       );
-      // <View style={styles.buttonView} />;
       const playPauseButton: Result<JSX.Element> = pipe(
         scaleAndRoot,
         O.fold(
@@ -267,10 +266,12 @@ export default function App(): JSX.Element {
                     () => placeholder,
                     sound =>
                       play ? (
-                        <View style={[StyleSheet.absoluteFill, styles.button]}>
-                          <Svg height="50%" width="50%" viewBox="0 0 100 100">
+                        <View style={StyleSheet.absoluteFill}>
+                          <Svg height="100%" width="100%" viewBox="0 0 100 100">
                             <G
                               onPress={() => {
+                                sound.pauseAsync();
+                                console.warn("play=false");
                                 setPlay(false);
                               }}
                             >
@@ -280,11 +281,12 @@ export default function App(): JSX.Element {
                           </Svg>
                         </View>
                       ) : (
-                        <View style={[StyleSheet.absoluteFill, styles.button]}>
-                          <Svg height="50%" width="50%" viewBox="0 0 100 100">
+                        <View style={StyleSheet.absoluteFill}>
+                          <Svg height="100%" width="100%" viewBox="0 0 100 100">
                             <Polygon
                               points="0,0 50,30 0,60"
                               onPress={() => {
+                                console.warn("play=true");
                                 sound.playAsync();
                                 setPlay(true);
                               }}
@@ -311,7 +313,7 @@ export default function App(): JSX.Element {
                 {rootPicker}
               </View>
               <View style={styles.music}>{sheetMusic}</View>
-              {playButton}
+              <View style={styles.button}>{playButton}</View>
             </View>
           )),
         E.getOrElse((e: string) => (
