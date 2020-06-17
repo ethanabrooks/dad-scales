@@ -163,7 +163,7 @@ export class Root extends Note {
             (mp3path: string): T.Result<Option<Sound>> =>
               pipe(
                 Root.getSoundThunk({ uri: mp3path }),
-                T.fromThunk(`Failed to create Sound from path ${mp3path}.`),
+                T.fromThunk,
                 TE.map(({ sound }) => O.some(sound))
               )
           )
