@@ -16,8 +16,8 @@
       {"name": "eb", "sharp": false, "mp3": null},
       {"name": "f#", "sharp": true, "mp3": null},
       {"name": "gb", "sharp": false, "mp3": null},
-      {"name": "g#", "sharp": true, "mp3": "./mp3/a-flat-g-sharp.mp3"},
-      {"name": "ab", "sharp": false, "mp3": "./mp3/a-flat-g-sharp.mp3"},
+      {"name": "g#", "sharp": true, "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/a-flat-g-sharp.mp3"},
+      {"name": "ab", "sharp": false, "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/a-flat-g-sharp.mp3"},
       {"name": "a#", "sharp": true, "mp3": null},
       {"name": "bb", "sharp": false, "mp3": null}
     ]

@@ -4,7 +4,6 @@ import { Option } from "fp-ts/es6/Option";
 import * as O from "fp-ts/lib/Option";
 import * as A from "fp-ts/lib/Array";
 import * as TE from "fp-ts/lib/TaskEither";
-import { TaskEither } from "fp-ts/lib/TaskEither";
 
 import { Lazy, pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";

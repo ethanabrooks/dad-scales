@@ -132,7 +132,7 @@ export default function App(): JSX.Element {
               E.map(
                 (firstScale: string): JSX.Element => (
                   <Picker
-                    style={styles.picker}
+                    style={{ backgroundColor: "white", ...styles.picker }}
                     selectedValue={pipe(
                       scaleName,
                       O.getOrElse(() => firstScale)
@@ -288,7 +288,7 @@ export default function App(): JSX.Element {
                                 sound.playAsync();
                                 setPlay(true);
                               }}
-                            />{" "}
+                            />
                           </Svg>
                         </View>
                       )
