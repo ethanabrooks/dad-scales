@@ -5,14 +5,16 @@ import * as O from "fp-ts/lib/Option";
 import * as A from "fp-ts/lib/Array";
 import * as TE from "fp-ts/lib/TaskEither";
 
-import { Lazy, pipe } from "fp-ts/lib/function";
+import { pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";
-import * as T from "./tresult";
+import * as T from "./tResult";
 import { MakeResult, Result } from "./result";
 import { Do } from "fp-ts-contrib/lib/Do";
 import { Sound } from "expo-av/build/Audio/Sound";
 import { AVPlaybackSource } from "expo-av/build/AV";
 import { Audio, AVPlaybackStatus } from "expo-av";
+import * as Task from "fp-ts/lib/Task";
+import { withTimeout } from "fp-ts-contrib/lib/Task/withTimeout";
 
 type Accidental = "#" | "b" | null;
 type Tone = { base: string; accidental: Accidental };
@@ -139,14 +141,15 @@ export class Root extends Note {
     this.sound = sound;
   }
 
-  static getSoundThunk: (path: AVPlaybackSource) => Lazy<Promise<Created>> = (
+  static getSoundTask: (path: AVPlaybackSource) => Task.Task<Created> = (
     path: AVPlaybackSource
   ) => () => Audio.Sound.createAsync(path, { shouldPlay: false });
 
   static fromString(
     s: string,
     sharpVersion: boolean,
-    mp3path: Option<string>
+    mp3path: Option<string>,
+    timeout: number
   ): T.Result<Root> {
     return Do(TE.taskEither)
       .bind("index", TE.fromEither(Note.indexFromString(s, sharpVersion)))
@@ -158,9 +161,11 @@ export class Root extends Note {
             () => TE.right(O.none),
             (mp3path: string): T.Result<Option<Sound>> =>
               pipe(
-                Root.getSoundThunk({ uri: mp3path }),
-                T.fromThunk,
-                TE.map(({ sound }) => O.some(sound))
+                Root.getSoundTask({ uri: mp3path }),
+                Task.map(({ sound }) => sound),
+                Task.map(E.right),
+                withTimeout(E.left("timed out"), timeout),
+                TE.map(O.some)
               )
           )
         )

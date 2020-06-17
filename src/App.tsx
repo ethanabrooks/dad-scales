@@ -20,7 +20,7 @@ import { Clef, Music } from "./music";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as R from "./result";
 import { MakeResult, Result } from "./result";
-import * as T from "./tresult";
+import * as T from "./tResult";
 import { ajv, schema } from "./schema";
 import { styles } from "./styles";
 import Svg, { G, Polygon } from "react-native-svg";
