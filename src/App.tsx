@@ -42,8 +42,8 @@ export function first<T>(seq: Seq.Indexed<T>): Result<T> {
 export default function App(): JSX.Element {
   const [state, setState] = React.useState<State>({ type: "loading" });
   const [clef, setClef] = React.useState<Clef>("treble");
-  const [scaleName, setScale] = React.useState<Option<string>>(O.some("major"));
-  const [rootName, setRoot] = React.useState<Option<string>>(O.some("g♯"));
+  const [scaleName, setScale] = React.useState<Option<string>>(O.none);
+  const [rootName, setRoot] = React.useState<Option<string>>(O.none);
   const [play, setPlay] = React.useState<boolean>(false);
   const sequence = A.array.sequence(TE.taskEither);
   const scaleMapTask: TaskResult<Map<string, Scale>> = pipe(
@@ -198,6 +198,7 @@ export default function App(): JSX.Element {
                     onValueChange={s => {
                       silence();
                       setScale(some(s));
+                      setRoot(O.none);
                     }}
                   >
                     {scaleMap
