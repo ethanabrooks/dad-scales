@@ -19,7 +19,7 @@ export class Music {
   static getContext(
     notes: Note[],
     clef: Clef,
-    style: StyleSheet.NamedStyles<Svg>
+    style: { width: number; height: number }
   ): Result<ReactPortal> {
     const sequence = A.array.sequence(E.either);
     const numNotes = Range(0, Infinity)
@@ -115,7 +115,7 @@ export class Music {
   constructor(
     scale: Vex.Flow.StaveNote[],
     clef: Clef,
-    style: StyleSheet.NamedStyles<Svg>
+    style: { width: number; height: number }
   ) {
     this.context = new ReactNativeSVGContext(style);
     const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 300);
