@@ -17,7 +17,7 @@ import { ajv, schema } from "./schema";
 import { styles } from "./styles";
 import Svg, { G, Polygon } from "react-native-svg";
 
-const TIMEOUT = 1000;
+const TIMEOUT = 2000;
 
 type Scale = { pattern: number[]; roots: Map<string, Root> };
 type State =
