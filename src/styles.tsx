@@ -35,6 +35,6 @@ export const styles = StyleSheet.create({
     width: 50,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "green"
+    backgroundColor: "yellow"
   }
 });

@@ -1,5 +1,5 @@
 import React, { ReactPortal } from "react";
-import { Picker, StyleSheet, Text, View } from "react-native";
+import { Picker, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import rawScales from "../scales.json";
 import { Note, NUM_TONES, Root } from "./note";
 import { Map, Seq } from "immutable";
@@ -264,36 +264,43 @@ export default function App(): JSX.Element {
                   root.sound,
                   O.fold(
                     () => placeholder,
-                    sound =>
-                      play ? (
-                        <View style={StyleSheet.absoluteFill}>
+                    sound => {
+                      let onPressPlay = () => {
+                        console.warn("play=true");
+                        sound.playAsync();
+                        setPlay(true);
+                      };
+                      let onPressPause = () => {
+                        sound.pauseAsync();
+                        console.warn("play=false");
+                        setPlay(false);
+                      };
+                      return play ? (
+                        <TouchableOpacity
+                          style={styles.button}
+                          onPress={onPressPause}
+                        >
                           <Svg height="100%" width="100%" viewBox="0 0 75 75">
-                            <G
-                              onPress={() => {
-                                sound.pauseAsync();
-                                console.warn("play=false");
-                                setPlay(false);
-                              }}
-                            >
+                            <G onPress={onPressPause}>
                               <Polygon points="0,0 15,0 15,60 0,60" />
                               <Polygon points="25,0 40,0 40,60 25,60" />
                             </G>
                           </Svg>
-                        </View>
+                        </TouchableOpacity>
                       ) : (
-                        <View>
+                        <TouchableOpacity
+                          style={styles.button}
+                          onPress={onPressPlay}
+                        >
                           <Svg height="100%" width="100%" viewBox="0 0 75 75">
                             <Polygon
                               points="0,0 50,30 0,60"
-                              onPress={() => {
-                                console.warn("play=true");
-                                sound.playAsync();
-                                setPlay(true);
-                              }}
+                              onPress={onPressPlay}
                             />
                           </Svg>
-                        </View>
-                      )
+                        </TouchableOpacity>
+                      );
+                    }
                   )
                 )
               )
