@@ -117,23 +117,6 @@ export default function App(): JSX.Element {
         </View>
       );
     case "loaded":
-      const clefSwitch: JSX.Element = (
-        <View style={styles.switch}>
-          {<Text>{clef}</Text>}
-          <Switch
-            onValueChange={() => {
-              switch (clef) {
-                case "treble":
-                  return setClef("bass");
-                case "bass":
-                  return setClef("treble");
-              }
-            }}
-            value={clef == "treble"}
-          />
-        </View>
-      );
-
       const scaleAndRoot: Option<Result<{ scale: Scale; root: Root }>> = pipe(
         rootName,
         O.mapNullable((name: string) =>
@@ -158,6 +141,31 @@ export default function App(): JSX.Element {
               scale,
               root
             }))
+        )
+      );
+
+      const clefSwitch: JSX.Element = pipe(
+        scaleAndRoot,
+        O.fold(
+          () => <View style={styles.switch} />,
+          () => {
+            return (
+              <View style={styles.switch}>
+                <Text>{clef}</Text>
+                <Switch
+                  onValueChange={() => {
+                    switch (clef) {
+                      case "treble":
+                        return setClef("bass");
+                      case "bass":
+                        return setClef("treble");
+                    }
+                  }}
+                  value={clef == "treble"}
+                />
+              </View>
+            );
+          }
         )
       );
 
