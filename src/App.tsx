@@ -136,7 +136,7 @@ export default function App(): JSX.Element {
               ({ scaleName, scaleMap }): Result<Scale> =>
                 R.lookup(scaleName, scaleMap)
             )
-            .bindL("root", ({ scale }) => R.lookup(name, scale.roots))
+            .bindL("root", ({ scale }) => pipe(R.lookup(name, scale.roots)))
             .return(({ scale, root }) => ({
               scale,
               root
@@ -206,7 +206,15 @@ export default function App(): JSX.Element {
                     onValueChange={s => {
                       silence();
                       setScale(some(s));
-                      setRoot(O.none);
+                      setRoot(
+                        Do(O.option)
+                          .bind("scale", O.fromNullable(scaleMap.get(s)))
+                          .bind("rootName", rootName)
+                          .bindL("newRoot", ({ scale, rootName }) =>
+                            O.fromNullable(scale.roots.get(rootName))
+                          )
+                          .return(({ rootName }) => rootName)
+                      );
                     }}
                   >
                     {scaleMap
