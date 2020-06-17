@@ -198,6 +198,7 @@ export default function App(): JSX.Element {
                   >
                     {scaleValue.roots
                       .keySeq()
+                      .sort()
                       .toArray()
                       .map(r => (
                         <Picker.Item label={r} value={r} key={r} />

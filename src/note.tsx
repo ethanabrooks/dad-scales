@@ -141,14 +141,7 @@ export class Root extends Note {
 
   static getSoundTask: (path: AVPlaybackSource) => T.Task<Created> = (
     path: AVPlaybackSource
-  ) => () => {
-    console.warn("executing promise");
-    let promise: Promise<{
-      sound: Sound;
-      status: AVPlaybackStatus;
-    }> = Audio.Sound.createAsync(path, { shouldPlay: false });
-    return promise;
-  };
+  ) => () => Audio.Sound.createAsync(path, { shouldPlay: false });
 
   static fromString(
     s: string,
