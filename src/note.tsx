@@ -13,7 +13,6 @@ import { Sound } from "expo-av/build/Audio/Sound";
 import { AVPlaybackSource } from "expo-av/build/AV";
 import { Audio, AVPlaybackStatus } from "expo-av";
 import * as T from "fp-ts/lib/Task";
-import { withTimeout } from "fp-ts-contrib/lib/Task/withTimeout";
 
 type Accidental = "#" | "b" | null;
 type Tone = { base: string; accidental: Accidental };
@@ -142,7 +141,14 @@ export class Root extends Note {
 
   static getSoundTask: (path: AVPlaybackSource) => T.Task<Created> = (
     path: AVPlaybackSource
-  ) => () => Audio.Sound.createAsync(path, { shouldPlay: false });
+  ) => () => {
+    console.warn("executing promise");
+    let promise: Promise<{
+      sound: Sound;
+      status: AVPlaybackStatus;
+    }> = Audio.Sound.createAsync(path, { shouldPlay: false });
+    return promise;
+  };
 
   static fromString(
     s: string,
@@ -150,28 +156,32 @@ export class Root extends Note {
     mp3path: Option<string>,
     timeout: number
   ): TaskResult<Root> {
+    let soundResult: TaskResult<Option<Sound>> = pipe(
+      mp3path,
+      O.fold(
+        () => TE.right(O.none),
+        (mp3path: string): TaskResult<Option<Sound>> => {
+          const fallback = pipe(
+            `Timed out while retrieving audio from ${mp3path}`,
+            E.left,
+            T.of,
+            T.delay(timeout)
+          );
+          const sound: TaskResult<Option<Sound>> = pipe(
+            Root.getSoundTask({ uri: mp3path }),
+            T.map(({ sound }) => O.some(sound)),
+            T.map(E.right)
+          );
+          return T.getRaceMonoid<Result<Option<Sound>>>().concat(
+            fallback,
+            sound
+          );
+        }
+      )
+    );
     return Do(TE.taskEither)
       .bind("index", TE.fromEither(Note.indexFromString(s, sharpVersion)))
-      .bind(
-        "sound",
-        pipe(
-          mp3path,
-          O.fold(
-            () => TE.right(O.none),
-            (mp3path: string): TaskResult<Option<Sound>> =>
-              pipe(
-                Root.getSoundTask({ uri: mp3path }),
-                T.map(({ sound }) => sound),
-                T.map(E.right),
-                withTimeout(
-                  E.left(`Timed out while retrieving audio from ${mp3path}`),
-                  timeout
-                ),
-                TE.map(O.some)
-              )
-          )
-        )
-      )
+      .bind("sound", soundResult)
       .return(({ index, sound }) => new Root(index, sharpVersion, sound));
   }
 }
