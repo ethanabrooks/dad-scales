@@ -9,8 +9,6 @@ import * as O from "fp-ts/lib/Option";
 import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import { ReactPortal } from "react";
-import { StyleSheet } from "react-native";
-import Svg from "react-native-svg/lib/typescript";
 
 export type Clef = "base" | "treble";
 
