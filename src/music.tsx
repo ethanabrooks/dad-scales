@@ -1,9 +1,6 @@
 import { Range } from "immutable";
 import Vex from "vexflow";
-import {
-  NotoFontPack,
-  ReactNativeSVGContext
-} from "standalone-vexflow-context";
+import { ReactNativeSVGContext } from "./ReactNativeSVGContext";
 import { Note, NUM_TONES } from "./note";
 import { Do } from "fp-ts-contrib/lib/Do";
 import { MakeResult, Result } from "./result";
@@ -35,7 +32,7 @@ export class Music {
         case "treble":
           return 4;
         case "base":
-          return 4;
+          return 2;
       }
     };
     const octaves = pipe(
@@ -120,8 +117,10 @@ export class Music {
     clef: Clef,
     style: StyleSheet.NamedStyles<Svg>
   ) {
-    this.context = new ReactNativeSVGContext(NotoFontPack, style);
+    this.context = new ReactNativeSVGContext(style);
     const stave: Vex.Flow.Stave = new Vex.Flow.Stave(0, 0, 300);
+    // Create the staves
+
     stave.setContext(this.context);
     stave.setClef(clef);
     stave.setTimeSignature(`4/4`);
