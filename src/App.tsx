@@ -134,6 +134,52 @@ export default function App(): JSX.Element {
         </View>
       );
 
+      const scaleAndRoot: Option<Result<{ scale: Scale; root: Root }>> = pipe(
+        rootName,
+        O.mapNullable((name: string) =>
+          Do(E.either)
+            .bind(
+              "scaleName",
+              pipe(
+                scaleName,
+                MakeResult.fromOption<string>(
+                  `Somehow, scale was none when root was ${rootName}.`
+                )
+              )
+            )
+            .bind("scaleMap", state.scaleMap)
+            .bindL(
+              "scale",
+              ({ scaleName, scaleMap }): Result<Scale> =>
+                R.lookup(scaleName, scaleMap)
+            )
+            .bindL("root", ({ scale }) => R.lookup(name, scale.roots))
+            .return(({ scale, root }) => ({
+              scale,
+              root
+            }))
+        )
+      );
+
+      const silence = () =>
+        pipe(
+          scaleAndRoot,
+          O.mapNullable(scaleAndRoot =>
+            pipe(
+              scaleAndRoot,
+              E.map(({ root }) =>
+                pipe(
+                  root.sound,
+                  O.mapNullable(sound => {
+                    setPlay(false);
+                    return sound.pauseAsync();
+                  })
+                )
+              )
+            )
+          )
+        );
+
       const scalePicker: Result<JSX.Element> = pipe(
         state.scaleMap,
         E.chain(
@@ -149,7 +195,10 @@ export default function App(): JSX.Element {
                       scaleName,
                       O.getOrElse(() => firstScale)
                     )}
-                    onValueChange={s => setScale(some(s))}
+                    onValueChange={s => {
+                      silence();
+                      setScale(some(s));
+                    }}
                   >
                     {scaleMap
                       .keySeq()
@@ -194,7 +243,10 @@ export default function App(): JSX.Element {
                       rootName,
                       O.getOrElse(() => firstRoot)
                     )}
-                    onValueChange={r => setRoot(some(r))}
+                    onValueChange={r => {
+                      silence();
+                      setRoot(some(r));
+                    }}
                   >
                     {scaleValue.roots
                       .keySeq()
@@ -206,33 +258,6 @@ export default function App(): JSX.Element {
                   </Picker>
                 )
               )
-        )
-      );
-
-      const scaleAndRoot: Option<Result<{ scale: Scale; root: Root }>> = pipe(
-        rootName,
-        O.mapNullable((name: string) =>
-          Do(E.either)
-            .bind(
-              "scaleName",
-              pipe(
-                scaleName,
-                MakeResult.fromOption<string>(
-                  `Somehow, scale was none when root was ${rootName}.`
-                )
-              )
-            )
-            .bind("scaleMap", state.scaleMap)
-            .bindL(
-              "scale",
-              ({ scaleName, scaleMap }): Result<Scale> =>
-                R.lookup(scaleName, scaleMap)
-            )
-            .bindL("root", ({ scale }) => R.lookup(name, scale.roots))
-            .return(({ scale, root }) => ({
-              scale,
-              root
-            }))
         )
       );
 
