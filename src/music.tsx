@@ -10,14 +10,16 @@ import * as A from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import { ReactPortal } from "react";
 
-export type Clef = "base" | "treble";
+export type Clef = "bass" | "treble";
+
+type Style = { width: string; height: string };
 
 export class Music {
   context: ReactNativeSVGContext;
   static getContext(
     notes: Note[],
     clef: Clef,
-    style: { width: number; height: number }
+    style: Style
   ): Result<ReactPortal> {
     const sequence = A.array.sequence(E.either);
     const numNotes = Range(0, Infinity)
@@ -29,7 +31,7 @@ export class Music {
       switch (clef) {
         case "treble":
           return 4;
-        case "base":
+        case "bass":
           return 2;
       }
     };

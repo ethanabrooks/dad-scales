@@ -28,10 +28,23 @@ export const styles = StyleSheet.create({
     height: "100%",
     width: "95%"
   },
+  toggles: {
+    flex: 1,
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-evenly",
+    alignItems: "center"
+  },
+
   button: {
     flex: 1,
-    width: "100%",
-    justifyContent: "center",
+    height: "100%"
+  },
+  switch: {
+    height: "100%",
+    width: 150,
+    flexDirection: "row",
+    justifyContent: "space-evenly",
     alignItems: "center"
   }
 });

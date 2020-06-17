@@ -1,5 +1,12 @@
 import React, { ReactPortal } from "react";
-import { Picker, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Picker,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
 import rawScales from "../scales.json";
 import { Note, NUM_TONES, Root } from "./note";
 import { Map, Seq } from "immutable";
@@ -111,15 +118,21 @@ export default function App(): JSX.Element {
         </View>
       );
     case "loaded":
-      const clefPicker: JSX.Element = (
-        <Picker
-          style={styles.picker}
-          selectedValue={clef}
-          onValueChange={v => setClef(v)}
-        >
-          <Picker.Item label={"treble"} value={"treble"} key={"treble"} />
-          <Picker.Item label={"bass"} value={"bass"} key={"bass"} />
-        </Picker>
+      const clefSwitch: JSX.Element = (
+        <View style={styles.switch}>
+          {<Text>{clef}</Text>}
+          <Switch
+            onValueChange={() => {
+              switch (clef) {
+                case "treble":
+                  return setClef("bass");
+                case "bass":
+                  return setClef("treble");
+              }
+            }}
+            value={clef == "treble"}
+          />
+        </View>
       );
 
       const scalePicker: Result<JSX.Element> = pipe(
@@ -249,9 +262,7 @@ export default function App(): JSX.Element {
         )
       );
 
-      const placeholder = (
-        <View style={[StyleSheet.absoluteFill, styles.button]} />
-      );
+      const placeholder = <View style={styles.toggles} />;
       const playPauseButton: Result<JSX.Element> = pipe(
         scaleAndRoot,
         O.fold(
@@ -266,13 +277,11 @@ export default function App(): JSX.Element {
                     () => placeholder,
                     sound => {
                       let onPressPlay = () => {
-                        console.warn("play=true");
                         sound.playAsync();
                         setPlay(true);
                       };
                       let onPressPause = () => {
                         sound.pauseAsync();
-                        console.warn("play=false");
                         setPlay(false);
                       };
                       return play ? (
@@ -317,7 +326,10 @@ export default function App(): JSX.Element {
             <View style={styles.container}>
               <View style={styles.picker}>{scalePicker}</View>
               <View style={styles.picker}>{rootPicker}</View>
-              <View style={styles.button}>{playButton}</View>
+              <View style={styles.toggles}>
+                {clefSwitch}
+                {playButton}
+              </View>
               <View style={styles.music}>{sheetMusic}</View>
             </View>
           )),
