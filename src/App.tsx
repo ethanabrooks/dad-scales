@@ -267,7 +267,7 @@ export default function App(): JSX.Element {
                     sound =>
                       play ? (
                         <View style={StyleSheet.absoluteFill}>
-                          <Svg height="100%" width="100%" viewBox="0 0 100 100">
+                          <Svg height="100%" width="100%" viewBox="0 0 75 75">
                             <G
                               onPress={() => {
                                 sound.pauseAsync();
@@ -281,8 +281,8 @@ export default function App(): JSX.Element {
                           </Svg>
                         </View>
                       ) : (
-                        <View style={StyleSheet.absoluteFill}>
-                          <Svg height="100%" width="100%" viewBox="0 0 100 100">
+                        <View>
+                          <Svg height="100%" width="100%" viewBox="0 0 75 75">
                             <Polygon
                               points="0,0 50,30 0,60"
                               onPress={() => {
