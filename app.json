@@ -3,15 +3,14 @@
   "displayName": "scales",
   "expo": {
     "name": "scales",
-    "slug": "scales",
+    "icon": "/Users/ethan/scales/png/treble.png",
     "version": "1.0.0",
-    "platforms": [
-      "ios",
-      "android",
-      "web"
-    ],
-    "assetBundlePatterns": [
-      "**/*"
-    ]
+    "slug": "scales",
+    "ios": {
+      "bundleIdentifier": "com.ethanabrooks.scales",
+      "buildNumber": "1.0.0"
+    },
+    "platforms": ["ios", "android", "web"],
+    "assetBundlePatterns": ["**/*"]
   }
 }

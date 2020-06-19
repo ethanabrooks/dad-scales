@@ -12,6 +12,7 @@
     "ajv": "^6.12.2",
     "expo": "~37.0.3",
     "expo-av": "~8.1.0",
+    "expo-sharing": "~8.1.0",
     "fp-ts": "^2.6.6",
     "fp-ts-contrib": "^0.1.16",
     "immutable": "^4.0.0-rc.12",
