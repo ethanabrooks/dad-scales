@@ -4,7 +4,7 @@
   "expo": {
     "name": "scales",
     "icon": "/Users/ethan/scales/png/treble.png",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "slug": "scales",
     "ios": {
       "bundleIdentifier": "com.ethanabrooks.scales",

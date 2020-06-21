@@ -6,72 +6,72 @@
       {
         "name": "c",
         "sharp": true,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/c.mp3"
       },
       {
         "name": "d",
         "sharp": true,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/d.mp3"
       },
       {
         "name": "f",
         "sharp": true,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/f.mp3"
       },
       {
         "name": "g",
         "sharp": true,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/g.mp3"
       },
       {
         "name": "a",
         "sharp": true,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/a.mp3"
       },
       {
         "name": "b",
         "sharp": true,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/b.mp3"
       },
       {
         "name": "c#",
         "sharp": true,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/c-sharp-d-flat.mp3"
       },
       {
         "name": "db",
         "sharp": true,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/c-sharp-d-flat.mp3"
       },
       {
         "name": "d#",
         "sharp": true,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/e-flat-d-sharp.mp3"
       },
       {
         "name": "eb",
         "sharp": true,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/e-flat-d-sharp.mp3"
       },
       {
         "name": "f#",
         "sharp": true,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/f-sharp-g-flat.mp3"
       },
       {
         "name": "gb",
         "sharp": true,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/f-sharp-g-flat.mp3"
       },
       {
         "name": "g#",
         "sharp": true,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/a-flat-g-sharp.mp3"
       },
       {
         "name": "ab",
         "sharp": false,
-        "mp3": null
+        "mp3": "https://raw.githubusercontent.com/ethanabrooks/dad-scales/master/mp3/a-flat-g-sharp.mp3"
       },
       { "name": "a#", "sharp": true, "mp3": null },
       { "name": "bb", "sharp": false, "mp3": null }
