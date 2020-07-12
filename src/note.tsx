@@ -130,51 +130,14 @@ export class Note {
   }
 }
 
-type Created = { sound: Sound; status: AVPlaybackStatus };
-
 export class Root extends Note {
-  sound: Option<Sound>;
-  constructor(index: number, sharp: boolean, sound: Option<Sound>) {
+  constructor(index: number, sharp: boolean) {
     super(index, sharp);
-    this.sound = sound;
   }
 
-  static getSoundTask: (path: AVPlaybackSource) => T.Task<Created> = (
-    path: AVPlaybackSource
-  ) => () => Audio.Sound.createAsync(path, { shouldPlay: false });
-
-  static fromString(
-    s: string,
-    sharpVersion: boolean,
-    mp3path: Option<string>,
-    timeout: number
-  ): TaskResult<Root> {
-    let soundResult: TaskResult<Option<Sound>> = pipe(
-      mp3path,
-      O.fold(
-        () => TE.right(O.none),
-        (mp3path: string): TaskResult<Option<Sound>> => {
-          const fallback = pipe(
-            `Timed out while retrieving audio from ${mp3path}`,
-            E.left,
-            T.of,
-            T.delay(timeout)
-          );
-          const sound: TaskResult<Option<Sound>> = pipe(
-            Root.getSoundTask({ uri: mp3path }),
-            T.map(({ sound }) => O.some(sound)),
-            T.map(E.right)
-          );
-          return T.getRaceMonoid<Result<Option<Sound>>>().concat(
-            fallback,
-            sound
-          );
-        }
-      )
-    );
+  static fromString(s: string, sharpVersion: boolean): TaskResult<Root> {
     return Do(TE.taskEither)
       .bind("index", TE.fromEither(Note.indexFromString(s, sharpVersion)))
-      .bind("sound", soundResult)
-      .return(({ index, sound }) => new Root(index, sharpVersion, sound));
+      .return(({ index }) => new Root(index, sharpVersion));
   }
 }

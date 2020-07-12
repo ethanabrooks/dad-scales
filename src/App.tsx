@@ -69,15 +69,7 @@ export default function App(): JSX.Element {
               roots.map(
                 ({ name: rootName, sharp, mp3 }): TaskResult<[string, Root]> =>
                   Do(TE.taskEither)
-                    .bind(
-                      "root",
-                      Root.fromString(
-                        rootName,
-                        sharp,
-                        O.fromNullable(mp3),
-                        TIMEOUT
-                      )
-                    )
+                    .bind("root", Root.fromString(rootName, sharp))
                     .bindL(
                       "unicodeString",
                       ({ root }): TaskResult<string> =>
@@ -178,25 +170,6 @@ export default function App(): JSX.Element {
         )
       );
 
-      const silence = () =>
-        pipe(
-          scaleAndRoot,
-          O.mapNullable(scaleAndRoot =>
-            pipe(
-              scaleAndRoot,
-              E.map(({ root }) =>
-                pipe(
-                  root.sound,
-                  O.mapNullable(sound => {
-                    setPlay(false);
-                    return sound.pauseAsync();
-                  })
-                )
-              )
-            )
-          )
-        );
-
       const scalePicker: Result<JSX.Element> = pipe(
         state.scaleMap,
         E.chain(
@@ -213,7 +186,6 @@ export default function App(): JSX.Element {
                       O.getOrElse(() => firstScale)
                     )}
                     onValueChange={s => {
-                      silence();
                       setScale(some(s));
                       setRoot(
                         Do(O.option)
@@ -270,7 +242,6 @@ export default function App(): JSX.Element {
                       O.getOrElse(() => firstRoot)
                     )}
                     onValueChange={r => {
-                      silence();
                       setRoot(some(r));
                     }}
                   >
@@ -313,74 +284,16 @@ export default function App(): JSX.Element {
         )
       );
 
-      const placeholder = <View style={styles.toggles} />;
-      const playPauseButton: Result<JSX.Element> = pipe(
-        scaleAndRoot,
-        O.fold(
-          () => E.right(placeholder),
-          (scaleAndRoot): Result<JSX.Element> =>
-            Do(E.either)
-              .bind("scaleAndRoot", scaleAndRoot)
-              .return(({ scaleAndRoot: { root } }) =>
-                pipe(
-                  root.sound,
-                  O.fold(
-                    () => placeholder,
-                    sound => {
-                      let onPressPlay = () => {
-                        sound.playAsync();
-                        setPlay(true);
-                      };
-                      let onPressPause = () => {
-                        sound.pauseAsync();
-                        setPlay(false);
-                      };
-                      return play ? (
-                        <TouchableOpacity
-                          style={styles.button}
-                          onPress={onPressPause}
-                        >
-                          <Svg height="80%" width="100%" viewBox="0 0 35 70">
-                            <G onPress={onPressPause}>
-                              <Polygon points="0,0 15,0 15,60 0,60" />
-                              <Polygon points="25,0 40,0 40,60 25,60" />
-                            </G>
-                          </Svg>
-                        </TouchableOpacity>
-                      ) : (
-                        <TouchableOpacity
-                          style={styles.button}
-                          onPress={onPressPlay}
-                        >
-                          <Svg height="80%" width="100%" viewBox="0 0 35 70">
-                            <Polygon
-                              points="0,0 50,30 0,60"
-                              onPress={onPressPlay}
-                            />
-                          </Svg>
-                        </TouchableOpacity>
-                      );
-                    }
-                  )
-                )
-              )
-        )
-      );
-
       return pipe(
         Do(E.either)
           .bind("scalePicker", scalePicker)
           .bind("rootPicker", rootPicker)
           .bind("sheetMusic", sheetMusic)
-          .bind("playButton", playPauseButton)
-          .return(({ scalePicker, rootPicker, sheetMusic, playButton }) => (
+          .return(({ scalePicker, rootPicker, sheetMusic }) => (
             <View style={styles.container}>
               <View style={styles.picker}>{scalePicker}</View>
               <View style={styles.picker}>{rootPicker}</View>
-              <View style={styles.toggles}>
-                {clefSwitch}
-                {playButton}
-              </View>
+              <View style={styles.toggles}>{clefSwitch}</View>
               <View style={styles.music}>{sheetMusic}</View>
             </View>
           )),
