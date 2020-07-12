@@ -1,5 +1,5 @@
 import React, { ReactPortal } from "react";
-import { Picker, Switch, Text, TouchableOpacity, View } from "react-native";
+import { Picker, Switch, Text, View } from "react-native";
 import rawScales from "../scales.json";
 import { Note, NUM_TONES, Root } from "./note";
 import { Map, Seq } from "immutable";
@@ -15,9 +15,6 @@ import * as R from "./result";
 import { MakeResult, Result, TaskResult } from "./result";
 import { ajv, schema } from "./schema";
 import { styles } from "./styles";
-import Svg, { G, Polygon } from "react-native-svg";
-
-const TIMEOUT = 2000;
 
 type Scale = { pattern: number[]; roots: Map<string, Root> };
 type State =
@@ -45,8 +42,8 @@ export default function App(): JSX.Element {
   const [clef, setClef] = React.useState<Clef>("treble");
   const [scaleName, setScale] = React.useState<Option<string>>(O.none);
   const [rootName, setRoot] = React.useState<Option<string>>(O.none);
-  const [play, setPlay] = React.useState<boolean>(false);
   const sequence = A.array.sequence(TE.taskEither);
+
   const scaleMapTask: TaskResult<Map<string, Scale>> = pipe(
     E.tryCatch(
       (): [boolean, string] => {
