@@ -13,6 +13,7 @@ import { Sound } from "expo-av/build/Audio/Sound";
 import { AVPlaybackSource } from "expo-av/build/AV";
 import { Audio, AVPlaybackStatus } from "expo-av";
 import * as T from "fp-ts/lib/Task";
+import { array } from "fp-ts/lib/Array";
 
 type Accidental = "#" | "b" | null;
 type Tone = { base: string; accidental: Accidental };
@@ -29,7 +30,7 @@ export const toneStrings: { sharp: string; flat: string }[] = [
   { sharp: "g#", flat: "ab" },
   { sharp: "a", flat: "a" },
   { sharp: "a#", flat: "bb" },
-  { sharp: "b", flat: "b" }
+  { sharp: "b", flat: "b" },
 ];
 
 export const NUM_TONES = toneStrings.length;
@@ -116,14 +117,14 @@ export class Note {
     return pipe(
       O.fromNullable(toneStrings[this.index]),
       MakeResult.withRangeError(this.index, toneStrings),
-      E.map(tone => (this.sharp ? tone.sharp : tone.flat))
+      E.map((tone) => (this.sharp ? tone.sharp : tone.flat))
     );
   }
 
   unicodeString(): Result<string> {
     return pipe(
       this.asciiString(),
-      E.map(asciiString =>
+      E.map((asciiString) =>
         asciiString.replace(/([a-z])b/, "$1♭").replace(/([a-z])#/, "$1♯")
       )
     );
@@ -135,9 +136,13 @@ export class Root extends Note {
     super(index, sharp);
   }
 
-  static fromString(s: string, sharpVersion: boolean): TaskResult<Root> {
-    return Do(TE.taskEither)
-      .bind("index", TE.fromEither(Note.indexFromString(s, sharpVersion)))
+  static fromString(s: string, sharpVersion: boolean): Result<Root> {
+    return Do(E.either)
+      .bind("index", Note.indexFromString(s, sharpVersion))
       .return(({ index }) => new Root(index, sharpVersion));
   }
 }
+export const roots: Root[] = Do(array)
+  .bind("index", Array.from(Array(NUM_TONES).keys()))
+  .bind("sharp", [true, false])
+  .return(({ index, sharp }) => new Root(index, sharp));

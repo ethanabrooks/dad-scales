@@ -1,106 +1,81 @@
-import { Do } from "fp-ts-contrib/lib/Do";
 import * as A from "fp-ts/lib/Array";
-import { array } from "fp-ts/lib/Array";
-import { Map, Seq } from "immutable";
+import { flatten } from "fp-ts/lib/Array";
 
-type A = { tag: "1"; suffix: B } | { tag: "11"; suffix: B };
-type B = { tag: "2" } | { tag: "32" } | { tag: "3A"; suffix: A };
-type SubScale = { tag: "A"; subtype: A } | { tag: "B"; subtype: B };
+const OCTAVE_LENGTH = 12;
 
-type ATag = "1" | "11";
-type BTag = "2" | "32" | "3A";
+type AScale = { head: [1]; tail: B } | { head: [1, 1]; tail: B };
+type BScale =
+  | { head: [2]; tail: C }
+  | { head: [2, 3]; tail: C }
+  | { head: [3]; tail: A };
+type CScale = A | B | null;
 
-const aTags: ATag[] = ["1", "11"];
-const bTags: BTag[] = ["2", "32", "3A"];
-const OCTAVE_LENGTH = 13;
+type A = { tag: "A"; scale: AScale };
+type B = { tag: "B"; scale: BScale };
+type C = { tag: "C"; scale: CScale };
+
+function AScales(len: number): A[] {
+  if (len <= 0) {
+    return [];
+  }
+  return flatten<AScale>([
+    BScales(len - 1).map((b: B) => ({ head: [1], tail: b })),
+    BScales(len - 2).map((b: B) => ({ head: [1, 1], tail: b })),
+  ]).map((a: AScale) => ({ tag: "A", scale: a }));
+}
+
+function BScales(len: number): B[] {
+  if (len <= 0) {
+    return [];
+  }
+  return flatten<BScale>([
+    AScales(len - 3).map((a: A): BScale => ({ head: [3], tail: a })),
+    CScales(len - 2).map((c: C) => ({ head: [2], tail: c })),
+    CScales(len - 5).map((c: C) => ({ head: [2, 3], tail: c })),
+  ]).map((b: BScale) => ({ tag: "B", scale: b }));
+}
+
+function CScales(len: number): C[] {
+  if (len < 0) {
+    return [];
+  } else if (len == 0) {
+    return [{ tag: "C", scale: null }];
+  } else {
+    return flatten<A | B>([AScales(len), BScales(len)]).map((c: CScale) => ({
+      tag: "C",
+      scale: c,
+    }));
+  }
+}
 
 function getStepsA(a: A): number[] {
-  switch (a.tag) {
-    case "1":
-      return [1].concat(getStepsB(a.suffix));
-    case "11":
-      return [1, 1].concat(getStepsB(a.suffix));
+  const head: number[] = a.scale.head;
+  if (a.scale.tail === null) {
+    return head;
   }
+  return head.concat(getStepsB(a.scale.tail));
 }
 
 function getStepsB(b: B): number[] {
-  switch (b.tag) {
-    case "2":
-      return [1];
-    case "32":
-      return [3, 2];
-    case "3A":
-      return [3].concat(getStepsA(b.suffix));
-  }
-}
-
-function getSteps(s: SubScale): number[] {
-  switch (s.tag) {
+  const head: number[] = b.scale.head;
+  switch (b.scale.tail.tag) {
     case "A":
-      return getStepsA(s.subtype);
-    case "B":
-      return getStepsB(s.subtype);
+      return head.concat(getStepsA(b.scale.tail));
+    case "C":
+      return head.concat(getStepsC(b.scale.tail));
   }
 }
 
-function subScalesA(maxLen: number): A[] {
-  return Do(array)
-    .bind("tag", aTags)
-    .bindL(
-      "suffix",
-      ({ tag }): B[] => {
-        switch (tag) {
-          case "1":
-            return maxLen < 2 ? [] : subScalesB(maxLen - 1);
-          case "11":
-            return maxLen < 3 ? [] : subScalesB(maxLen - 2);
-        }
-      }
-    )
-    .return(a => a);
+function getStepsC(c: C): number[] {
+  if (c.scale === null) {
+    return [];
+  }
+  switch (c.scale.tag) {
+    case "A":
+      return getStepsA(c.scale);
+    case "B":
+      return getStepsB(c.scale);
+  }
 }
 
-function subScalesB(maxLen: number): B[] {
-  return bTags.flatMap(
-    (tag: BTag): B[] => {
-      switch (tag) {
-        case "2":
-          return maxLen < 1 ? [] : [{ tag }];
-        case "32":
-          return maxLen < 2 ? [] : [{ tag }];
-        case "3A":
-          return maxLen < 2
-            ? []
-            : subScalesA(maxLen - 1).map(a => ({ tag, suffix: a }));
-      }
-    }
-  );
-}
-
-function subScales(maxLen: number): SubScale[] {
-  let as: SubScale[] = subScalesA(maxLen).map(a => ({ tag: "A", subtype: a }));
-  let bs: SubScale[] = subScalesB(maxLen).map(b => ({ tag: "B", subtype: b }));
-  return as.concat(bs);
-}
-
-function subScalesOfLength(length: number): SubScale[][] {
-  return Do(array)
-    .bind("s", subScales(length))
-    .bindL(
-      "ss",
-      ({ s }): SubScale[][] => subScalesOfLength(length - getSteps(s).length)
-    )
-    .return(({ s, ss }) => ss.concat(s));
-}
-
-function stringOfScale(scale: number[]) {
-  return scale.reduce((s, n) => s + String(n), "");
-}
-
-const octaves = subScalesOfLength(OCTAVE_LENGTH).map(ss =>
-  ss.flatMap(getSteps)
-);
-
-const scaleMap: Map<String, Number[]> = Map(
-  octaves.map(s => [stringOfScale(s), s])
-);
+export const scales: number[][] = CScales(OCTAVE_LENGTH).map(getStepsC);
