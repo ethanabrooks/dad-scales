@@ -1,6 +1,6 @@
 import React, { ReactPortal } from "react";
 import { Button, Picker, Switch, Text, View } from "react-native";
-import { Note, NUM_TONES, Root, roots, toneStrings } from "./note";
+import { Note, NUM_TONES, roots, toneStrings } from "./note";
 import { Seq } from "immutable";
 import * as O from "fp-ts/lib/Option";
 import * as E from "fp-ts/lib/Either";
@@ -127,10 +127,10 @@ export default function App(): JSX.Element {
         ))
       );
 
-      const root: Result<Root> = pipe(
+      const root: Result<Note> = pipe(
         rootName,
         E.map(
-          (rootName: string): Result<Root> => {
+          (rootName: string): Result<Note> => {
             return Root.fromString(rootName, true);
           }
         ),
@@ -139,13 +139,14 @@ export default function App(): JSX.Element {
 
       const notes: Result<Note[]> = pipe(
         root,
-        E.map((root) =>
-          scale
-            .reduce(modCumSum, {
-              acc: [root.getIndex()],
-              prev: root.getIndex(),
-            })
-            .acc.map((v) => new Note(v, root.sharp))
+        E.map(
+          (root) =>
+            scale
+              .reduce(modCumSum, {
+                acc: [root.getIndex()],
+                prev: root.getIndex(),
+              })
+              .acc.map((v) => new Note(v, root.sharp)) // TODO
         )
       );
 

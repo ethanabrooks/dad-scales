@@ -76,6 +76,12 @@ export class Note {
     return checkResult(searchResult);
   }
 
+  static fromString(s: string, sharpVersion: boolean): Result<Root> {
+    return Do(E.either)
+      .bind("index", Note.indexFromString(s, sharpVersion))
+      .return(({ index }) => new Root(index, sharpVersion));
+  }
+
   static noteFromString(s: string, sharpVersion: boolean): Result<Note> {
     return Do(E.either)
       .bind("index", Note.indexFromString(s, sharpVersion))
@@ -131,18 +137,7 @@ export class Note {
   }
 }
 
-export class Root extends Note {
-  constructor(index: number, sharp: boolean) {
-    super(index, sharp);
-  }
-
-  static fromString(s: string, sharpVersion: boolean): Result<Root> {
-    return Do(E.either)
-      .bind("index", Note.indexFromString(s, sharpVersion))
-      .return(({ index }) => new Root(index, sharpVersion));
-  }
-}
-export const roots: Root[] = Do(array)
+export const roots: Note[] = Do(array)
   .bind("index", Array.from(Array(NUM_TONES).keys()))
   .bind("sharp", [true, false])
-  .return(({ index, sharp }) => new Root(index, sharp));
+  .return(({ index, sharp }) => new Note(index, sharp));
