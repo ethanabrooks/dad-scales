@@ -14,7 +14,7 @@ type B = { tag: "B"; scale: BScale };
 type C = { tag: "C"; scale: CScale };
 
 function AScales(len: number): A[] {
-  if (len <= 0) {
+  if (len <= 1) {
     return [];
   }
   return flatten<AScale>([
@@ -77,4 +77,11 @@ function getStepsC(c: C): number[] {
   }
 }
 
+// CScales(NUM_TONES)
+//   .map(getStepsC)
+//   .forEach((scale, i) => {
+//     console.log(i);
+//     console.log(scale.reduce((a, b) => a + b));
+//     console.log(scale);
+//   });
 export const scales: number[][] = CScales(NUM_TONES).map(getStepsC);

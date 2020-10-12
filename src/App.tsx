@@ -1,15 +1,13 @@
 import React, { ReactPortal } from "react";
 import { Button, Picker, Switch, Text, View } from "react-native";
 import { Note, NUM_TONES, roots, toneStrings } from "./note";
-import { Seq } from "immutable";
 import * as O from "fp-ts/lib/Option";
 import * as E from "fp-ts/lib/Either";
 import * as A from "fp-ts/lib/Array";
-import * as TE from "fp-ts/lib/TaskEither";
 import { pipe } from "fp-ts/lib/function";
 import { Do } from "fp-ts-contrib/lib/Do";
 import { Clef, Music } from "./music";
-import { MakeResult, Result } from "./result";
+import { Result } from "./result";
 import { styles } from "./styles";
 import "./Scales";
 import { scales } from "./Scales";
@@ -34,8 +32,8 @@ function randomNumber(n: number): number {
 
 function randomScale(): Scale {
   let scale = scales[randomNumber(scales.length)];
-  return scale;
-  // return A.rotate(randomNumber(NUM_TONES))(scale);
+  let rotation = randomNumber(NUM_TONES);
+  return scale.slice(rotation, scale.length).concat(scale.slice(0, rotation));
 }
 
 export default function App(): JSX.Element {
@@ -43,7 +41,6 @@ export default function App(): JSX.Element {
   const [clef, setClef] = React.useState<Clef>("treble");
   const [scale, setScale] = React.useState<Scale>(scales[0]);
   const [rootOption, setRoot] = React.useState<O.Option<string>>(O.none);
-  console.log(scale);
   // const sequence = A.array.sequence(E.either);
 
   React.useEffect(() => {
