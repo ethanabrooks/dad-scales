@@ -1,7 +1,6 @@
 import * as A from "fp-ts/lib/Array";
 import { flatten } from "fp-ts/lib/Array";
-
-const OCTAVE_LENGTH = 12;
+import { NUM_TONES } from "./note";
 
 type AScale = { head: [1]; tail: B } | { head: [1, 1]; tail: B };
 type BScale =
@@ -78,4 +77,4 @@ function getStepsC(c: C): number[] {
   }
 }
 
-export const scales: number[][] = CScales(OCTAVE_LENGTH).map(getStepsC);
+export const scales: number[][] = CScales(NUM_TONES).map(getStepsC);

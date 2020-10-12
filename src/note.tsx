@@ -3,17 +3,12 @@ import Vex from "vexflow";
 import { Option } from "fp-ts/es6/Option";
 import * as O from "fp-ts/lib/Option";
 import * as A from "fp-ts/lib/Array";
-import * as TE from "fp-ts/lib/TaskEither";
+import { array } from "fp-ts/lib/Array";
 
 import { pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";
-import { MakeResult, Result, TaskResult } from "./result";
+import { MakeResult, Result } from "./result";
 import { Do } from "fp-ts-contrib/lib/Do";
-import { Sound } from "expo-av/build/Audio/Sound";
-import { AVPlaybackSource } from "expo-av/build/AV";
-import { Audio, AVPlaybackStatus } from "expo-av";
-import * as T from "fp-ts/lib/Task";
-import { array } from "fp-ts/lib/Array";
 
 type Accidental = "#" | "b" | null;
 type Tone = { base: string; accidental: Accidental };
@@ -76,10 +71,10 @@ export class Note {
     return checkResult(searchResult);
   }
 
-  static fromString(s: string, sharpVersion: boolean): Result<Root> {
+  static fromString(s: string, sharpVersion: boolean): Result<Note> {
     return Do(E.either)
       .bind("index", Note.indexFromString(s, sharpVersion))
-      .return(({ index }) => new Root(index, sharpVersion));
+      .return(({ index }) => new Note(index, sharpVersion));
   }
 
   static noteFromString(s: string, sharpVersion: boolean): Result<Note> {

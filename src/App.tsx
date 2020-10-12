@@ -28,15 +28,22 @@ function modCumSum(
   return { acc: acc.concat(sum % NUM_TONES), prev: sum };
 }
 
+function randomNumber(n: number): number {
+  return Math.floor(Math.random() * n);
+}
+
 function randomScale(): Scale {
-  return scales[Math.round(Math.random() * scales.length)];
+  let scale = scales[randomNumber(scales.length)];
+  return scale;
+  // return A.rotate(randomNumber(NUM_TONES))(scale);
 }
 
 export default function App(): JSX.Element {
   const [state, setState] = React.useState<State>({ type: "loading" });
   const [clef, setClef] = React.useState<Clef>("treble");
-  const [scale, setScale] = React.useState<Scale>(randomScale());
+  const [scale, setScale] = React.useState<Scale>(scales[0]);
   const [rootOption, setRoot] = React.useState<O.Option<string>>(O.none);
+  console.log(scale);
   // const sequence = A.array.sequence(E.either);
 
   React.useEffect(() => {
@@ -131,7 +138,7 @@ export default function App(): JSX.Element {
         rootName,
         E.map(
           (rootName: string): Result<Note> => {
-            return Root.fromString(rootName, true);
+            return Note.fromString(rootName, true);
           }
         ),
         E.flatten

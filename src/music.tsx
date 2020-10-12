@@ -11,7 +11,7 @@ import { ReactPortal } from "react";
 import {
   NotoFontPack,
   ReactNativeSVGContext,
-  SVGContextStyle
+  SVGContextStyle,
 } from "standalone-vexflow-context";
 
 export type Clef = "bass" | "treble";
@@ -25,10 +25,10 @@ export class Music {
   ): Result<ReactPortal> {
     const sequence = A.array.sequence(E.either);
     const numNotes = Range(0, Infinity)
-      .map(n => Math.pow(2, n))
-      .filter(n => n >= notes.length)
+      .map((n) => Math.pow(2, n))
+      .filter((n) => n >= notes.length)
       .first(null);
-    const indices = notes.map(n => n.getIndex() % NUM_TONES);
+    const indices = notes.map((n) => n.getIndex() % NUM_TONES);
     const startingOctave = () => {
       switch (clef) {
         case "treble":
@@ -61,9 +61,9 @@ export class Music {
                 new Vex.Flow.StaveNote({
                   clef: clef,
                   keys: [`${string}/${octave}`],
-                  duration: `${numNotes}`
+                  duration: `${numNotes}`,
                 }),
-              e => `new Vex.Flow.StaveNote({
+              (e) => `new Vex.Flow.StaveNote({
             clef: ${clef},
             keys: [${string}/${octave}],
             duration: ${numNotes}
@@ -75,7 +75,7 @@ export class Music {
 
     return Do(E.either)
       .bind("staveNotes", sequence(staveNotes))
-      .bind("accidentals", sequence(notes.map(n => n.vexFlowAccidental())))
+      .bind("accidentals", sequence(notes.map((n) => n.vexFlowAccidental())))
       .letL("zipped", ({ staveNotes, accidentals }) =>
         A.zip(staveNotes, accidentals)
       )
@@ -87,7 +87,7 @@ export class Music {
               : E.tryCatch(
                   () => staveNote.addAccidental(0, accidental),
 
-                  e =>
+                  (e) =>
                     `staveNote.addAccidental(0, ${accidental}) threw an error:\n${e}`
                 )
         )
@@ -98,7 +98,7 @@ export class Music {
           () => {
             return new Music(scale, clef, style);
           },
-          e =>
+          (e) =>
             `new Music(scale, style) threw an error:\n${e}
               \nscale:${scale}
               \nstyle:${style}`
@@ -107,7 +107,7 @@ export class Music {
       .bindL("reactPortal", ({ music }) =>
         E.tryCatch(
           () => music.render(),
-          e => `music.render() threw an error:\n${e}`
+          (e) => `music.render() threw an error:\n${e}`
         )
       )
       .return(({ reactPortal }) => reactPortal);
@@ -124,7 +124,7 @@ export class Music {
     const beams = Vex.Flow.Beam.generateBeams(scale);
     Vex.Flow.Formatter.FormatAndDraw(this.context, stave, scale);
     const context = this.context;
-    beams.forEach(function(b: Vex.Flow.Beam) {
+    beams.forEach(function (b: Vex.Flow.Beam) {
       b.setContext(context).draw();
     });
   }
