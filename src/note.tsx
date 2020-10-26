@@ -11,9 +11,10 @@ import { MakeResult, Result } from "./result";
 import { Do } from "fp-ts-contrib/lib/Do";
 
 type Accidental = "#" | "b" | null;
-type Tone = { base: string; accidental: Accidental };
+type _Tone = { base: string; accidental: Accidental };
+export type Tone = { sharp: string; flat: string };
 
-export const toneStrings: { sharp: string; flat: string }[] = [
+export const toneStrings: Tone[] = [
   { sharp: "c", flat: "c" },
   { sharp: "c#", flat: "db" },
   { sharp: "d", flat: "d" },
@@ -30,9 +31,9 @@ export const toneStrings: { sharp: string; flat: string }[] = [
 
 export const NUM_TONES = toneStrings.length;
 
-const tones: { sharp: Tone; flat: Tone }[] = toneStrings.map(
+const tones: { sharp: _Tone; flat: _Tone }[] = toneStrings.map(
   ({ sharp, flat }) => {
-    const parse = (s: string): Tone => {
+    const parse = (s: string): _Tone => {
       switch (s[1]) {
         case "#":
           return { base: s[0], accidental: "#" };
@@ -46,7 +47,7 @@ const tones: { sharp: Tone; flat: Tone }[] = toneStrings.map(
   }
 );
 
-export type ToneAlternatives = { sharp: Tone; flat: Tone };
+export type ToneAlternatives = { sharp: _Tone; flat: _Tone };
 
 export class Note {
   index: number;
@@ -92,7 +93,7 @@ export class Note {
       A.lookup(this.index, tones) as Option<ToneAlternatives>,
       MakeResult.withRangeError(this.index, tones),
       E.map(({ sharp, flat }: ToneAlternatives) => {
-        let tone: Tone = this.sharp ? sharp : flat;
+        let tone: _Tone = this.sharp ? sharp : flat;
         return tone.accidental;
       })
     );

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@react-native-community/picker": "^1.6.3",
+    "@svgr/cli": "^5.4.0",
     "ajv": "^6.12.2",
     "expo": "~37.0.3",
     "expo-av": "~8.1.0",
@@ -19,7 +20,7 @@
     "prettier": "^2.1.2",
     "react": "~16.9.0",
     "react-dom": "~16.9.0",
-    "react-native": "https://github.com/expo/react-native/archive/sdk-37.0.1.tar.gz",
+    "react-native": "0.63",
     "react-native-screens": "~2.2.0",
     "react-native-svg": "11.0.1",
     "react-native-web": "~0.11.7",

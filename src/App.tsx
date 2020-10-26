@@ -1,22 +1,11 @@
-import React, { ReactPortal } from "react";
-import { Button, Picker, Switch, Text, View } from "react-native";
-import { Note, NUM_TONES, roots, toneStrings } from "./note";
-import * as O from "fp-ts/lib/Option";
-import * as E from "fp-ts/lib/Either";
-import * as A from "fp-ts/lib/Array";
-import { pipe } from "fp-ts/lib/function";
-import { Do } from "fp-ts-contrib/lib/Do";
-import { Clef, Music } from "./music";
-import { Result } from "./result";
-import { styles } from "./styles";
+import React from "react";
+import { Button, Picker, Text, TouchableOpacity, View } from "react-native";
+import { NUM_TONES, Tone, toneStrings } from "./note";
 import "./Scales";
 import { scales } from "./Scales";
+import { styles } from "./styles";
 
 type Scale = number[];
-type State =
-  | { type: "loading" }
-  | { type: "loaded" }
-  | { type: "error"; message: string };
 
 function modCumSum(
   { acc, prev }: { acc: number[]; prev: number },
@@ -42,157 +31,86 @@ function randomScale(): Scale {
 }
 
 export default function App(): JSX.Element {
-  const [state, setState] = React.useState<State>({ type: "loading" });
-  const [clef, setClef] = React.useState<Clef>("treble");
   const [scale, setScale] = React.useState<Scale>(scales[0]);
-  const [rootOption, setRoot] = React.useState<O.Option<string>>(O.none);
-  // const sequence = A.array.sequence(E.either);
+  const [root, setRoot] = React.useState<number>(0);
 
-  React.useEffect(() => {
-    if (state.type == "loading") {
-      let rootName: Result<string> = Do(E.either)
-        .bind(
-          "root",
-          pipe(
-            roots,
-            A.head,
-            E.fromOption(() => "Roots was empty")
-          )
-        )
-        .bindL("rootName", ({ root }) => root.unicodeString())
-        .return(({ rootName }) => rootName);
-      pipe(
-        rootName,
-        E.fold(
-          (e) => setState({ type: "error", message: e }),
-          (rootName) => {
-            setRoot(O.some(rootName));
-            setState({ type: "loaded" });
-          }
-        )
-      );
-    }
-  });
+  const scaleButton: JSX.Element = (
+    <Button title={"Randomize Scale"} onPress={() => setScale(randomScale())} />
+  );
 
-  switch (state.type) {
-    case "error":
-      return (
-        <View style={styles.error}>
-          <Text style={{ fontWeight: "bold" }}>Error!</Text>
-          <Text>🙀</Text>
-          <Text style={{ textAlign: "center" }}>{state.message}</Text>
-        </View>
-      );
-    case "loading":
-      return (
-        <View>
-          <Text>Loading...</Text>
-        </View>
-      );
-    case "loaded":
-      const clefSwitch: JSX.Element = (
-        <View style={styles.switch}>
-          <Text>{clef}</Text>
-          <Switch
-            onValueChange={() => {
-              switch (clef) {
-                case "treble":
-                  return setClef("bass");
-                case "bass":
-                  return setClef("treble");
-              }
+  const rootButton: JSX.Element = (
+    <Button
+      title={"Randomize Root"}
+      onPress={() => setRoot(randomNumber(NUM_TONES))}
+    />
+  );
+
+  const rootPicker: JSX.Element = (
+    <Picker
+      style={{ backgroundColor: "white", ...styles.picker }}
+      selectedValue={root}
+      onValueChange={setRoot}
+    >
+      {toneStrings
+        .map((t) => t.sharp)
+        .map((r) => (
+          <Picker.Item label={r} value={r} key={r} />
+        ))}
+    </Picker>
+  );
+
+  const scaleIndices: number[] = scale.reduce(
+    (soFar: number[], n: number) => {
+      return soFar.concat((soFar[soFar.length - 1] + n) % NUM_TONES);
+    },
+    [root]
+  );
+  console.log("root", root);
+  console.log("scaledIndices", scaleIndices);
+  const width = 250;
+  const necklace = (
+    <View
+      style={{
+        flex: 1,
+        width: width,
+      }}
+    >
+      {toneStrings.map((t: Tone, i: number) => {
+        const theta = (2 * Math.PI * i) / NUM_TONES;
+        const diameter = width / 6;
+        const left = (width * (1 + Math.cos(theta)) - diameter) / 2;
+        const top = (width * (1 + Math.sin(theta))) / 2;
+        const color = scaleIndices.includes(i) ? "black" : "lightgrey";
+        return (
+          <TouchableOpacity
+            style={{
+              width: diameter,
+              height: diameter,
+              position: "absolute",
+              left: left,
+              top: top,
+              backgroundColor: color,
+              borderRadius: 50,
+              alignItems: "center",
+              justifyContent: "center",
             }}
-            value={clef == "treble"}
-          />
-        </View>
-      );
-
-      const scaleButton: JSX.Element = (
-        <Button
-          title={"Randomize Scale"}
-          onPress={() => setScale(randomScale())}
-        />
-      );
-
-      const rootButton: JSX.Element = (
-        <Button
-          title={"Randomize Root"}
-          onPress={() => setRoot(O.some(randomRoot()))}
-        />
-      );
-
-      const rootName: Result<string> = pipe(
-        rootOption,
-        E.fromOption(() => "rootName was None")
-      );
-
-      const rootPicker: Result<JSX.Element> = pipe(
-        rootName,
-        E.map((rootName: string) => (
-          <Picker
-            style={{ backgroundColor: "white", ...styles.picker }}
-            selectedValue={rootName}
-            onValueChange={(s) => setRoot(O.some(s))}
+            onPress={() => {
+              setRoot(i);
+              setScale(scales[randomNumber(scales.length)]);
+              console.warn("hello");
+            }}
           >
-            {toneStrings
-              .map((t) => t.sharp)
-              .map((r) => (
-                <Picker.Item label={r} value={r} key={r} />
-              ))}
-          </Picker>
-        ))
-      );
+            <Text style={{ color: "white" }}>{t.sharp}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
 
-      const root: Result<Note> = pipe(
-        rootName,
-        E.map(
-          (rootName: string): Result<Note> => {
-            return Note.fromString(rootName, true);
-          }
-        ),
-        E.flatten
-      );
-
-      const notes: Result<Note[]> = pipe(
-        root,
-        E.map(
-          (root) =>
-            scale
-              .reduce(modCumSum, {
-                acc: [root.getIndex()],
-                prev: root.getIndex(),
-              })
-              .acc.map((v) => new Note(v, root.sharp)) // TODO
-        )
-      );
-
-      const sheetMusic: Result<ReactPortal | JSX.Element> = pipe(
-        notes,
-        E.map((notes) => Music.getContext(notes, clef, styles.svg)),
-        E.flatten
-      );
-
-      return pipe(
-        Do(E.either)
-          .bind("sheetMusic", sheetMusic)
-          .bind("rootPicker", rootPicker)
-          .return(({ sheetMusic, rootPicker }) => (
-            <View style={styles.container}>
-              <View style={styles.picker}>{rootPicker}</View>
-              <View style={styles.button}>{scaleButton}</View>
-              <View style={styles.button}>{rootButton}</View>
-              <View style={styles.toggles}>{clefSwitch}</View>
-              <View style={styles.music}>{sheetMusic}</View>
-            </View>
-          )),
-        E.getOrElse((e: string) => {
-          setState({ type: "error", message: `${e}` });
-          return (
-            <View style={styles.error}>
-              <Text>Loading error...</Text>
-            </View>
-          );
-        })
-      );
-  }
+  return (
+    <View style={styles.container}>
+      <View style={styles.button}>{rootButton}</View>
+      <View style={styles.necklace}>{necklace}</View>
+    </View>
+  );
 }
