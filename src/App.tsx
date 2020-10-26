@@ -30,6 +30,11 @@ function randomNumber(n: number): number {
   return Math.floor(Math.random() * n);
 }
 
+function randomRoot(): string {
+  let tone = toneStrings[randomNumber(NUM_TONES)];
+  return Math.random() ? tone.sharp : tone.flat;
+}
+
 function randomScale(): Scale {
   let scale = scales[randomNumber(scales.length)];
   let rotation = randomNumber(NUM_TONES);
@@ -109,6 +114,13 @@ export default function App(): JSX.Element {
         />
       );
 
+      const rootButton: JSX.Element = (
+        <Button
+          title={"Randomize Root"}
+          onPress={() => setRoot(O.some(randomRoot()))}
+        />
+      );
+
       const rootName: Result<string> = pipe(
         rootOption,
         E.fromOption(() => "rootName was None")
@@ -168,6 +180,7 @@ export default function App(): JSX.Element {
             <View style={styles.container}>
               <View style={styles.picker}>{rootPicker}</View>
               <View style={styles.button}>{scaleButton}</View>
+              <View style={styles.button}>{rootButton}</View>
               <View style={styles.toggles}>{clefSwitch}</View>
               <View style={styles.music}>{sheetMusic}</View>
             </View>
