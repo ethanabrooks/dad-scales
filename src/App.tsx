@@ -19,24 +19,9 @@ function randomNumber(n: number): number {
   return Math.floor(Math.random() * n);
 }
 
-function randomRoot(): string {
-  let tone = toneStrings[randomNumber(NUM_TONES)];
-  return Math.random() ? tone.sharp : tone.flat;
-}
-
-function randomScale(): Scale {
-  let scale = scales[randomNumber(scales.length)];
-  let rotation = randomNumber(NUM_TONES);
-  return scale.slice(rotation, scale.length).concat(scale.slice(0, rotation));
-}
-
 export default function App(): JSX.Element {
   const [scale, setScale] = React.useState<Scale>(scales[0]);
   const [root, setRoot] = React.useState<number>(0);
-
-  const scaleButton: JSX.Element = (
-    <Button title={"Randomize Scale"} onPress={() => setScale(randomScale())} />
-  );
 
   const rootButton: JSX.Element = (
     <Button
@@ -45,28 +30,12 @@ export default function App(): JSX.Element {
     />
   );
 
-  const rootPicker: JSX.Element = (
-    <Picker
-      style={{ backgroundColor: "white", ...styles.picker }}
-      selectedValue={root}
-      onValueChange={setRoot}
-    >
-      {toneStrings
-        .map((t) => t.sharp)
-        .map((r) => (
-          <Picker.Item label={r} value={r} key={r} />
-        ))}
-    </Picker>
-  );
-
   const scaleIndices: number[] = scale.reduce(
     (soFar: number[], n: number) => {
       return soFar.concat((soFar[soFar.length - 1] + n) % NUM_TONES);
     },
     [root]
   );
-  console.log("root", root);
-  console.log("scaledIndices", scaleIndices);
   const width = 250;
   const necklace = (
     <View
@@ -97,8 +66,8 @@ export default function App(): JSX.Element {
             onPress={() => {
               setRoot(i);
               setScale(scales[randomNumber(scales.length)]);
-              console.warn("hello");
             }}
+            key={i}
           >
             <Text style={{ color: "white" }}>{t.sharp}</Text>
           </TouchableOpacity>
