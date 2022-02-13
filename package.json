@@ -10,7 +10,7 @@
   "dependencies": {
     "@react-native-community/picker": "^1.6.3",
     "@svgr/cli": "^5.4.0",
-    "ajv": "^6.12.2",
+    "ajv": "^6.12.3",
     "expo": "~37.0.3",
     "expo-av": "~8.1.0",
     "expo-sharing": "~8.1.0",
